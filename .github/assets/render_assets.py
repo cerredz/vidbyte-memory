@@ -43,10 +43,46 @@ PURPLE = (188, 140, 255)
 RED = (248, 81, 73)
 
 # Each step: (kind, text). kinds: "cmd" is typed after a prompt, "out" prints, "say" is a dim narration line,
-# "quote" is the owner's words, "pause" holds the frame for the given number of seconds, "clear" starts a new screen.
-# CARD_COMMIT is a real footprint commit subject from the example repo.
-CARD_COMMIT = "memory: +1 facts, +3 tests, +1 feedback"
-DEMO: list[tuple[str, str]] = []
+# "quote" is the owner's words, "ok" / "fail" are passing and failing results, "git" is a commit line, "file" is a
+# changed path, "pause" holds the frame for the given number of seconds, "clear" starts a new screen.
+# CARD_COMMIT is the start of a real footprint commit subject from the example repo (2026-10-28, cut at a comma).
+CARD_COMMIT = "memory: +1 facts, 1 facts superseded, +1 failures, …"
+DEMO: list[tuple[str, str]] = [
+    ("say", "# the owner corrected the agent once (memory/feedback-log.md, FB-002):"),
+    ("quote", '"for each price though can you just intregrate it with its regular price?"'),
+    ("say", "# three subagents turned it into memory and checks:"),
+    ("file", "facts/domain.md                     F-002 regular rate only (supersedes F-001)"),
+    ("file", "tests/test_fb002_regular_prices.py  8 tests, fixtures from real promo prices"),
+    ("file", "verifiers/price-source-match.md     fetches each source_url, ties out prices"),
+    ("file", "memory/open-questions.md            Q-001..Q-003 left for the owner to decide"),
+    ("git", "memory: +1 facts, 1 facts superseded, ... +16 tests, +1 verifiers, +2 feedback"),
+    ("pause", "2.2"),
+    ("clear", ""),
+    ("say", "# demo: slip the corrected mistake back into prices.csv"),
+    ("cmd", "tail -1 prices.csv"),
+    ("out", "openai,gpt-5.6-sol,standard,4,20,...,promo 4/20 through 2026-11-21; regular 5/30"),
+    ("cmd", "python -m pytest -q tests"),
+    ("fail", "FAILED tests/test_fb002_regular_prices.py::"),
+    ("fail", "       test_no_row_is_priced_at_a_promotion_its_note_names"),
+    ("out", "  prices.csv:8 (openai / gpt-5.6-sol / standard): the prices equal '4/20', which"),
+    ("out", "  the note calls a promotion or sale; price the row at the regular rate"),
+    ("fail", "2 failed, 53 passed in 0.28s"),
+    ("say", "# the agent fixes the row before the owner ever sees it"),
+    ("pause", "2.2"),
+    ("clear", ""),
+    ("say", "# the next real request: price the current Claude models"),
+    ("cmd", "python -m pytest -q tests"),
+    ("ok", "55 passed in 0.19s"),
+    ("say", "# round 2: a fresh-context verifier finds what no test encodes"),
+    ("fail", "memory-conformance FAIL  prices.csv:3  no row for claude-opus-5-5 fast mode"),
+    ("out", "  its own source page prices fast mode as a premium tier: $8 / $40 per MTok"),
+    ("say", "# the agent adds the row; round 3 reruns everything"),
+    ("ok", "55 passed  |  memory-conformance PASS  |  price-source-match PASS (6 rows)"),
+    ("cmd", 'python scripts/footprint.py --commit --title "price the current Claude models"'),
+    ("git", "committed: memory: no change"),
+    ("say", "# no new correction from the owner, so memory did not have to grow"),
+    ("pause", "2.5"),
+]
 
 
 def social_preview(path: Path) -> None:
@@ -76,7 +112,7 @@ def social_preview(path: Path) -> None:
             x += d.textlength(text, font=mono)
         y += 40
     d.text((84, 572), "github.com/cerredz/vidbyte-memory", font=font(SANS_BOLD, 28), fill=TEXT)
-    label = "Claude Code  ·  Codex  ·  Cursor  ·  any AGENTS.md agent"
+    label = "For Claude Code and any AGENTS.md agent"
     small = font(SANS, 22)
     d.text((width - 80 - d.textlength(label, font=small), 578), label, font=small, fill=MUTED)
     img.save(path, optimize=True)
@@ -132,7 +168,7 @@ def demo_gif(path: Path, steps: list[tuple[str, str]]) -> None:
                 emit(1000 // fps // 2, cursor=True)
             emit(350)
         else:
-            color = {"out": TEXT, "say": MUTED, "quote": YELLOW, "ok": GREEN, "git": PURPLE, "file": BLUE}[kind]
+            color = {"out": TEXT, "say": MUTED, "quote": YELLOW, "ok": GREEN, "fail": RED, "git": PURPLE, "file": BLUE}[kind]
             screen.append([(text, color)])
             emit(220)
     emit(2500)

@@ -68,17 +68,19 @@ flowchart TD
 A user's task repo commits the footprint as before, now with one trailer line:
 
 ```text
-$ python scripts/footprint.py --commit --title "price the Claude 5.5 family"
-committed: memory: +1 facts, +2 tests, +1 feedback
+$ python scripts/footprint.py --commit --title "price the current Claude models"
+committed: memory: no change
 pushed
 
 $ git log -1 --format=%B
-memory: +1 facts, +2 tests, +1 feedback
+memory: no change
 
-price the Claude 5.5 family
+price the current Claude models
 
 Memory-Template: vidbyte-memory
 ```
+
+This is the live example's real commit `972a9e9` from 2026-10-28.
 
 The template owner counts adoption with GitHub commit search for `"Memory-Template: vidbyte-memory"`. A user turns the trailer off with `--no-marker`, or by setting `TEMPLATE_MARKER = ""` in `scripts/footprint.py`.
 

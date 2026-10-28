@@ -112,7 +112,7 @@ Its memory was seeded with two corrections the owner really gave on the Vidbyte 
 1. Prices must be the ones the provider serves on its own API, with documentation links as proof.
 2. Use the regular price, not a promotion.
 
-Its `git log` shows each correction becoming facts and tests, and the next request passing them.
+Its `git log` shows each correction becoming facts, tests and a verifier. In the next request, pricing the current Claude models, the tests passed on the first try, and a fresh-context verifier still caught a missing price tier in round 2. The agent fixed it before the request ended, and memory did not have to change. Its README shows how to slip the corrected mistake back in and watch the tests catch it.
 
 ## What this is not
 
