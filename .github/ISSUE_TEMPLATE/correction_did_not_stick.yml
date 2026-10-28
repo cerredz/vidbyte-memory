@@ -1,0 +1,56 @@
+name: A correction didn't stick
+description: You corrected the agent, the template handled it, and the agent made the same mistake later. Accepted cases become tests in the template.
+labels: [memory-gap]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This is the failure the template exists to prevent, so these reports matter most. Each accepted case becomes a test or a verifier in the template, credited to you in the release notes.
+        Remove private task content before pasting; a short paraphrase of the task is enough.
+  - type: textarea
+    id: correction
+    attributes:
+      label: What you told the agent
+      description: Your words, as logged in `memory/feedback-log.md`.
+      render: markdown
+    validations:
+      required: true
+  - type: textarea
+    id: disposition
+    attributes:
+      label: What the feedback became
+      description: The FB entry's `disposition:` line, and the ids or test paths it names.
+      placeholder: "disposition: fact R-002 | tests tests/test_fb003_no_trailing_spaces.py | updates none"
+    validations:
+      required: true
+  - type: textarea
+    id: repeat
+    attributes:
+      label: The repeat
+      description: What the agent did on the later request, and why the test or verifier did not catch it.
+    validations:
+      required: true
+  - type: dropdown
+    id: harness
+    attributes:
+      label: Agent harness
+      options:
+        - Claude Code
+        - Codex CLI
+        - Cursor
+        - GitHub Copilot coding agent
+        - Gemini CLI
+        - OpenCode
+        - Other (say below)
+    validations:
+      required: true
+  - type: dropdown
+    id: rounds
+    attributes:
+      label: Did the request run its verification rounds?
+      options:
+        - Yes, 3 to 5 rounds with tests and verifiers
+        - Some rounds were skipped
+        - I don't know
+    validations:
+      required: true

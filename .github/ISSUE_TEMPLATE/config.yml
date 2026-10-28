@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Ask a question
+    url: https://github.com/cerredz/vidbyte-memory/discussions/categories/q-a
+    about: How to set up a task repo, which harness to use, how to write a fact or a test.
+  - name: Show your memory
+    url: https://github.com/cerredz/vidbyte-memory/discussions/categories/show-and-tell
+    about: Share a task repo made from the template, with its footprint after some corrections.
+  - name: Report a security problem
+    url: https://github.com/cerredz/vidbyte-memory/security/advisories/new
+    about: Report privately; please do not open a public issue.

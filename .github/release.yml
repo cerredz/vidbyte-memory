@@ -1,0 +1,28 @@
+changelog:
+  exclude:
+    labels:
+      - skip-changelog
+  categories:
+    - title: Memory protocol
+      labels:
+        - protocol
+    - title: Skills, prompts and verifiers
+      labels:
+        - skills
+    - title: Harness support
+      labels:
+        - harness-support
+    - title: Fixes
+      labels:
+        - bug
+        - memory-gap
+    - title: Scripts, tests and CI
+      labels:
+        - scripts
+        - dependencies
+    - title: Documentation
+      labels:
+        - documentation
+    - title: Other changes
+      labels:
+        - "*"
