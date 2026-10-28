@@ -4,14 +4,19 @@ These tests are the deterministic half of the memory system. They fail when an e
 format, when an index drifts from its folder, when a fact is not 4 to 5 sentences, when a rule names no
 check, when a supersession points nowhere, when feedback is left pending or its disposition names nothing
 real, when the footprint is stale, when a secret or a relative date enters memory, when a document names a
-path that does not exist, or when a skill or prompt loses one of its seven sections. Source of truth for the
-format: memory/MAP.md.
+path that does not exist, when a skill or prompt loses one of its seven sections, or when a footprint commit
+message stops carrying its delta, title and Memory-Template trailer. Source of truth for the format:
+memory/MAP.md.
 """
 
 from __future__ import annotations
 
 import importlib.util
 import re
+import shutil
+import subprocess
+
+import pytest
 
 import helpers as h
 
@@ -76,6 +81,14 @@ def _expected_prefix(file: str) -> str | None:
     if file.startswith("facts/") and file != "facts/README.md":
         return "F"
     return PREFIX_BY_FILE.get(file)
+
+
+def _footprint_module():
+    spec = importlib.util.spec_from_file_location("footprint", h.ROOT / "scripts" / "footprint.py")
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(module)
+    return module
 
 
 def test_memory_and_fact_files_have_frontmatter():
@@ -246,10 +259,7 @@ def test_verifier_index_matches_files():
 
 
 def test_footprint_is_current():
-    spec = importlib.util.spec_from_file_location("footprint", h.ROOT / "scripts" / "footprint.py")
-    module = importlib.util.module_from_spec(spec)
-    assert spec.loader is not None
-    spec.loader.exec_module(module)
+    module = _footprint_module()
     expected = module.render(module.scan())
     actual = h.text("memory/footprint.md")
     assert actual == expected, "memory/footprint.md is stale; run `python scripts/footprint.py --write`"
@@ -373,3 +383,27 @@ def test_skills_and_prompts_have_the_seven_sections():
         if headings != SEVEN_SECTIONS:
             problems.append(f"{h.rel(path)}: sections are {headings}")
     assert not problems, "every skill and prompt has exactly these `## ` sections, in order: " + ", ".join(SEVEN_SECTIONS) + "\n" + "\n".join(problems)
+
+
+def test_footprint_commit_keeps_delta_as_subject_and_title_as_body():
+    paragraphs = _footprint_module().commit_message("+1 facts, +2 tests", "price the Claude family")
+    assert paragraphs[:2] == ["memory: +1 facts, +2 tests", "price the Claude family"]
+
+
+def test_footprint_commit_ends_with_the_template_marker():
+    footprint = _footprint_module()
+    assert footprint.commit_message("no change", "request")[-1] == footprint.TEMPLATE_MARKER
+
+
+def test_footprint_commit_without_marker_has_no_trailer():
+    assert _footprint_module().commit_message("no change", "request", marker="") == ["memory: no change", "request"]
+
+
+@pytest.mark.skipif(shutil.which("git") is None, reason="git is not installed")
+def test_template_marker_parses_as_a_git_trailer():
+    footprint = _footprint_module()
+    if not footprint.TEMPLATE_MARKER:
+        pytest.skip("TEMPLATE_MARKER is empty, so footprint commits carry no trailer")
+    message = "\n\n".join(footprint.commit_message("+3 tests", "request")) + "\n"
+    result = subprocess.run(["git", "interpret-trailers", "--parse"], input=message, text=True, capture_output=True, check=True)
+    assert result.stdout.strip() == footprint.TEMPLATE_MARKER

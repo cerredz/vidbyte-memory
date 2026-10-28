@@ -11,7 +11,7 @@ During feedback handling, before the orchestrator fills the disposition and rege
 | File | Role |
 |---|---|
 | `helpers.py` | Reads repo files, parses frontmatter and memory entries, counts sentences. Every test imports from it. |
-| `test_memory_integrity.py` | Checks the memory itself and the documents around it: frontmatter, indexes, ids, metadata, fact length, checks named, supersession links, dispositions, footprint current, no secrets, no relative dates, no dangling paths in the docs, seven sections in every skill and prompt. |
+| `test_memory_integrity.py` | Checks the memory itself and the documents around it: frontmatter, indexes, ids, metadata, fact length, checks named, supersession links, dispositions, footprint current, no secrets, no relative dates, no dangling paths in the docs, seven sections in every skill and prompt, and the footprint commit message with its `Memory-Template` trailer. |
 | `feedback_test_template.py` | A worked example of a feedback test. Not collected by pytest. Copy it to `test_fb<nnn>_<slug>.py`. |
 | `fixtures/` | Small copies of rejected and accepted artifacts that feedback tests assert against. |
 

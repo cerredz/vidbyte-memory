@@ -1,0 +1,19 @@
+{
+  "repo_notes": [
+    {
+      "content": "vidbyte-memory is a GitHub template, not a library: users click 'Use this template', replace the '## Task' block in AGENTS.md with one recurring task, and let their coding agent work in the repo. The core idea is correction-driven memory: every human correction is logged verbatim and handed to three subagents (fact, test, update), which turn it into slim facts or rules in facts/ and memory/, deterministic pytest tests in tests/ or verifier agents in verifiers/, and updates to older memory. scripts/footprint.py ends every request with a commit whose message is the memory delta. Document the protocol and the reasons behind it (memory files are never rewritten whole; memory is context while tests and the Stop hook are enforcement; facts are admitted only through five checks). Ignore .github/assets and docs/design."
+    }
+  ],
+  "pages": [
+    {"title": "Overview", "purpose": "What the template is, who it is for, the correction-driven memory loop from request to footprint commit, and what it is not (no database, no service, one owner and one task per repo)."},
+    {"title": "Starting a task repo", "purpose": "Creating a repo from the template, filling the Task block in AGENTS.md, the first test run, and which template-only files to delete.", "parent": "Overview"},
+    {"title": "The AGENTS.md runtime protocol", "purpose": "The start-of-request, generation, feedback, pausing and end-of-request steps in AGENTS.md, the stopping condition, and the checklist an agent must satisfy."},
+    {"title": "Memory types and entry format", "purpose": "memory/MAP.md: each typed memory file, entry ids and metadata lines, statuses (active, superseded, retired) and the write rule for each file.", "parent": "The AGENTS.md runtime protocol"},
+    {"title": "Facts and admission checks", "purpose": "facts/ and skills/create-fact/SKILL.md: the five admission checks, the 4-to-5-sentence fact format, and routing between facts, rules and hints.", "parent": "Memory types and entry format"},
+    {"title": "Feedback handling and the three subagents", "purpose": "skills/handle-feedback/SKILL.md and prompts/: logging feedback verbatim, the fact, test and update subagents with disjoint write scopes, stitching, and dispositions.", "parent": "The AGENTS.md runtime protocol"},
+    {"title": "Tests, verifiers and verification rounds", "purpose": "tests/ (including test_memory_integrity.py), verifiers/ and skills/verify-generation/SKILL.md: how feedback becomes a deterministic test or a verifier agent, and the 3-to-5-round stopping condition."},
+    {"title": "Footprint commits and the Stop hook", "purpose": "scripts/footprint.py (counts, delta, commit message, Memory-Template trailer, --no-marker) and scripts/guard.py (the Claude Code Stop hook and its five-round cap)."},
+    {"title": "Harness support", "purpose": "How the template runs in Claude Code (subagent wrappers in .claude/agents, Stop hook in .claude/settings.json) versus Codex, Cursor and other AGENTS.md harnesses, where the protocol is followed by hand."},
+    {"title": "Contributing and releases", "purpose": "The contribution rules in .github/CONTRIBUTING.md, CI workflows in .github/workflows, CHANGELOG.md and how releases credit requesters."}
+  ]
+}

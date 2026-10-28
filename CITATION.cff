@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+message: "If you use or build on this template, please cite it as below."
+type: software
+title: "vidbyte-memory: correction-driven memory for coding agents"
+abstract: >-
+  A GitHub template for task-specific agent memory that learns from human
+  corrections. Each correction becomes a slim fact or rule, a deterministic
+  test or a verifier agent, and a git commit that records how the memory
+  changed. Memory is markdown, tests and git in a repository the user owns.
+authors:
+  - name: Vidbyte
+    website: "https://vidbyte.pro"
+repository-code: "https://github.com/cerredz/vidbyte-memory"
+license: MIT
+version: 0.1.0
+date-released: "2026-10-28"
+keywords:
+  - agent memory
+  - coding agents
+  - claude code
+  - agents.md
+  - human feedback
+  - context engineering

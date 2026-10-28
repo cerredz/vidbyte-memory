@@ -1,0 +1,65 @@
+name: Bug report
+description: A script, test, skill or prompt in the template behaves wrongly.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Memory files and logs can contain private task content, so remove anything you would not post publicly before pasting.
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Before you file
+      options:
+        - label: I searched open and closed issues and this is not a duplicate.
+          required: true
+        - label: I can reproduce it on the latest `main` of the template, or I say below which commit my repo was made from.
+          required: true
+  - type: dropdown
+    id: harness
+    attributes:
+      label: Agent harness
+      options:
+        - Claude Code
+        - Codex CLI
+        - Cursor
+        - GitHub Copilot coding agent
+        - Gemini CLI
+        - OpenCode
+        - Other (say below)
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: Which file or command was involved, and what it did.
+      placeholder: Running `python scripts/footprint.py --commit` ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Output of `python -m pytest -q tests`, or the error
+      render: text
+  - type: input
+    id: environment
+    attributes:
+      label: OS and Python version
+      placeholder: Ubuntu 24.04, Python 3.12

@@ -1,0 +1,17 @@
+{
+  "$schema": "https://context7.com/schema/context7.json",
+  "projectTitle": "vidbyte-memory",
+  "description": "GitHub template for task-specific agent memory that learns from human corrections: slim facts, three feedback subagents, deterministic pytest checks and a footprint commit per request. No API key, no database, no service.",
+  "excludeFolders": [".github/assets", "docs/design", "tests/fixtures"],
+  "excludeFiles": ["CODE_OF_CONDUCT.md", "CITATION.cff"],
+  "rules": [
+    "Start a task repo with `gh repo create <name> --template cerredz/vidbyte-memory --private --clone`, then replace the `## Task` block in AGENTS.md.",
+    "Read AGENTS.md on every request; it is an index, so open only the memory files whose 'load when' matches the request.",
+    "Log human feedback verbatim in memory/feedback-log.md before launching the fact, test and update subagents.",
+    "Never edit facts/, memory/rules.md, memory/guarantees.md or tests/ as a side effect of generation; they change only through skills/handle-feedback.",
+    "Never rewrite a memory file whole: append entries and edit metadata lines in place; supersede or retire, never delete.",
+    "Give every generative step 3 to 5 verification rounds: python -m pytest -q tests plus the verifiers in verifiers/INDEX.md.",
+    "End every request with: python scripts/footprint.py --write, python -m pytest -q tests, python scripts/footprint.py --commit --title \"<request>\".",
+    "Memory is context, not enforcement: when a rule keeps being missed, add a test or a verifier instead of stronger wording."
+  ]
+}

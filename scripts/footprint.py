@@ -6,9 +6,14 @@ Usage:
   python scripts/footprint.py --delta                     print the delta against HEAD's footprint
   python scripts/footprint.py --commit --title "<request>" write, append the run-log line, commit, push
   python scripts/footprint.py --commit --no-push          same without the push
+  python scripts/footprint.py --commit --no-marker        same without the Memory-Template trailer
 
 Standard library only. The footprint file carries no timestamps so that the integrity test can compare it
 byte for byte with a fresh render.
+
+Footprint commits end with a git trailer naming the template (TEMPLATE_MARKER). It is the only thing that
+lets the template's maintainers count public repos that use it, through GitHub commit search; it sends
+nothing anywhere and is visible only where the repo is public. Set TEMPLATE_MARKER to "" to drop it for good.
 """
 
 from __future__ import annotations
@@ -27,6 +32,7 @@ ENTRY_RE = re.compile(r"^### ([A-Z]{1,2})-(\d{3,}): ")
 STATUS_RE = re.compile(r"^-- .*\bstatus: (active|superseded|retired)\b")
 TEST_DEF_RE = re.compile(r"^\s*(?:async\s+)?def test_")
 STATUSES = ("active", "superseded", "retired")
+TEMPLATE_MARKER = "Memory-Template: vidbyte-memory"
 
 AREAS = [
     ("facts", "facts/*.md"),
@@ -187,7 +193,15 @@ def append_run_log(title: str, change: str) -> None:
     RUN_LOG.write_text(src + line, encoding="utf-8", newline="\n")
 
 
-def commit(title: str, push: bool) -> int:
+def commit_message(change: str, title: str, marker: str = TEMPLATE_MARKER) -> list[str]:
+    """The commit message as paragraphs: the footprint delta, the request title, then the trailer if any."""
+    paragraphs = [f"memory: {change}", title]
+    if marker:
+        paragraphs.append(marker)
+    return paragraphs
+
+
+def commit(title: str, push: bool, marker: str = TEMPLATE_MARKER) -> int:
     old = head_footprint()
     new = write()
     change = delta(old, new)
@@ -196,7 +210,10 @@ def commit(title: str, push: bool) -> int:
     if git("diff", "--cached", "--quiet", check=False).returncode == 0:
         print("nothing to commit")
         return 0
-    git("commit", "-m", f"memory: {change}", "-m", title)
+    args: list[str] = []
+    for paragraph in commit_message(change, title, marker):
+        args += ["-m", paragraph]
+    git("commit", *args)
     print(f"committed: memory: {change}")
     if push:
         if git("remote", "get-url", "origin", check=False).returncode != 0:
@@ -217,9 +234,10 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--commit", action="store_true", help="write, append the run-log line, commit, push")
     parser.add_argument("--title", default="request", help="the request in a few words, for the run log and the commit")
     parser.add_argument("--no-push", action="store_true", help="commit without pushing")
+    parser.add_argument("--no-marker", action="store_true", help="leave out the Memory-Template trailer")
     args = parser.parse_args(argv)
     if args.commit:
-        return commit(args.title, push=not args.no_push)
+        return commit(args.title, push=not args.no_push, marker="" if args.no_marker else TEMPLATE_MARKER)
     if args.delta:
         print(delta(head_footprint(), scan()))
         return 0
