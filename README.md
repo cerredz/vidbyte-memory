@@ -7,7 +7,7 @@ The design rests on three findings from the published memory systems: memory fil
 ## The loop
 
 1. **Start of a request.** The agent reads `AGENTS.md`, which is an index, then opens only the memory files whose "load when" matches.
-2. **Generation.** Each generative step gets 3 to 5 verification rounds with the full suite: the tests in `tests/` and the verifier agents listed in `verifiers/INDEX.md`.
+2. **Generation.** Each generative step gets 3 to 5 verification rounds with the full suite: the tests in `tests/` and the verifier agents listed in `verifiers/INDEX.md`. A step stops on the first passing round at or after round 3, and never runs past round 5; what is still failing then is reported, not hidden.
 3. **Feedback.** Any correction triggers three subagents in parallel: one decides whether the feedback becomes a long-lasting fact and writes it, one turns the feedback into deterministic tests or a verifier agent, one updates existing memory that the feedback contradicts or confirms.
 4. **End of a request.** All tests pass, no feedback is left pending, and `scripts/footprint.py --commit` regenerates `memory/footprint.md`, commits with the delta in the message, and pushes.
 
