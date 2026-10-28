@@ -27,7 +27,7 @@ Run the suite against the current output in rounds, fix findings between rounds,
 
 - The full suite is both parts: the tests and the verifiers. Skipping either is not a round.
 - A verifier runs as a separate agent that sees only what its file lists. In Claude Code, launch the `verifier` agent from `.claude/agents/` with the verifier path and the artifact paths. Elsewhere, start a fresh context with the verifier file as the system prompt.
-- A `FAIL` the agent believes is wrong is still a finding: fix the artifact, or record the disagreement as an open question for the owner. Never mark a round clean by overruling a verifier.
+- A `FAIL` the agent believes is wrong is still a finding: fix the artifact, or record the disagreement as a `Q` entry in `memory/open-questions.md` for the owner to settle; every other unresolved finding goes under open items in `memory/progress.md`. Never mark a round clean by overruling a verifier.
 - Each round is a full run against the current output, not a re-check of only the last findings.
 - Cite the rule or fact ids that each fix applied.
 
@@ -46,4 +46,4 @@ The progress table rows for the step, and a one-line verdict: clean after round 
 ## Runtime behavior
 
 - Runs inside the main request after every generative step, before the output is shown or used downstream.
-- Reads memory and runs tests; writes only `memory/progress.md`.
+- Reads memory and runs tests; fixes go to the artifact, and the only repo file it writes is `memory/progress.md`.

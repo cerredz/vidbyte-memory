@@ -25,7 +25,7 @@ Apply one of five operations to existing entries, or append one entry to a non-f
 
 - **Supersede** when the new information contradicts the entry: set `status: superseded` and `superseded-by: <new id>` on the old entry, and `supersedes: <old id>` on the new one. The old text stays.
 - **Retire** when the entry no longer applies to anything: set `status: retired` and `reason: <why>`. The text stays.
-- **Confirm** when the feedback restates an entry: set `confirmed: YYYY-MM-DD`. If the same entry is confirmed by a correction twice, report it as a rule that is not taking effect, so the test agent adds a check.
+- **Confirm** when the feedback restates an entry: set `confirmed: YYYY-MM-DD`. If the same entry is confirmed by a correction twice, report it as not taking effect, so the orchestrator adds a check through `skills/create-test/SKILL.md`.
 - **Narrow** when the feedback shows the entry over-applies: supersede it with a narrower entry and set `scope`.
 - **Leave** when nothing touches it.
 - A workflow is written only from a run the owner accepted and has at least two steps with `{placeholders}` for the values that vary.
@@ -47,4 +47,5 @@ A list of `id: operation (reason)` lines, and the ids of any new entries.
 ## Runtime behavior
 
 - Edits only metadata lines of existing entries; appends new entries at the end of the file.
-- Writes only to `memory/` files other than `rules.md`, `hints.md`, `guarantees.md`, `progress.md`, `run-log.md` and `footprint.md`, plus metadata lines in `facts/` and `memory/rules.md` when superseding or confirming.
+- Writes only to `memory/` files other than `rules.md`, `hints.md`, `guarantees.md`, `progress.md`, `run-log.md` and `footprint.md`, plus metadata lines in `facts/`, `memory/rules.md` and `memory/hints.md` when superseding, retiring or confirming.
+- Inside feedback handling, the feedback-update subagent reports those metadata edits for the orchestrator instead of making them, because the fact and test subagents write the same files at the same time.

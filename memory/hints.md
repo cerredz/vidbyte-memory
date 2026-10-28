@@ -1,7 +1,7 @@
 ---
 title: Hints
 description: Soft preferences and heuristics the owner has expressed, stated as SHOULD or PREFER. Load when the output is something the owner will read or see.
-write: Feedback that is a preference rather than a correction, routed here by the feedback-fact subagent. A hint that the owner corrects twice becomes a rule.
+write: Feedback that is a preference rather than a correction, routed here by the feedback-fact subagent. A hint the owner corrects twice becomes a fact with a check.
 ---
 
 # Hints

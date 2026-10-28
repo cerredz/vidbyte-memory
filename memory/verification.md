@@ -1,7 +1,7 @@
 ---
 title: Ways to verify
 description: How each kind of claim or artifact is verified in this repo, and which test or verifier does it. Load before each verification round.
-write: The feedback-test subagent when it adds a new kind of check, and skills/create-verifier when it registers a verifier.
+write: skills/create-verifier, only when a verifier checks a kind of claim no existing entry names. verifiers/INDEX.md is the registry of verifiers.
 ---
 
 # Ways to verify

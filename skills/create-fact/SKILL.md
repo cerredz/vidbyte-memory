@@ -16,8 +16,8 @@ Decide whether a piece of feedback or a collected finding deserves a durable ent
 ## Tasks
 
 1. Run the five admission checks below. Stop at the first failure unless the owner said "collect facts", which waives check 1.
-2. Grep `facts/`, `memory/rules.md` and `memory/hints.md` for the subject. If an entry covers it, do not add a second; report it to the update agent's scope by naming the existing id.
-3. Choose the type: a fact states what is true; a rule states what the agent MUST or MUST NOT do; a hint states a preference the owner would not call a correction.
+2. Grep `facts/`, `memory/rules.md` and `memory/hints.md` for the subject. If an active entry says the same, do not add a second; name it. If the new information contradicts or narrows it, write the new entry with `supersedes: <old id>`; marking the old entry superseded is done through `skills/update-memory/SKILL.md`, by the orchestrator inside feedback handling.
+3. Choose the type. A correction about what an output must contain or look like, or about the world the agent works in, is a fact: the narrowest rule behind the correction, in 4 to 5 sentences. A rule constrains how the agent works (what it must run, never do, or always check) rather than what an output contains. A hint is a preference the owner would not call a correction. When in doubt, fact.
 4. Choose the file: facts go to the `facts/<subject>.md` whose description fits; rules to `memory/rules.md`; hints to `memory/hints.md`.
 5. Allocate the id: highest existing number for that prefix plus one, across all files of that prefix.
 6. Write the entry in the format below and append it to the file.
@@ -35,7 +35,7 @@ Decide whether a piece of feedback or a collected finding deserves a durable ent
 
 ### Writing the entry
 
-A fact is 4 to 5 full sentences, each ending in a period, in this order: the subject and when it applies; the fact stated as the narrowest rule; why, in the owner's terms; how to apply it in practice; optionally the boundary or the evidence. No abbreviations with periods, no URLs and no file paths inside the sentences; put pointers on the metadata line. A rule is one MUST or MUST NOT sentence plus one sentence of why. A hint is one SHOULD or PREFER sentence plus one sentence of why.
+A fact is 4 to 5 full sentences, each ending in a period, in this order: the subject and when it applies; the fact stated as the narrowest rule; why, in the owner's terms; how to apply it in practice; optionally the boundary or the evidence. No abbreviations with periods, no URLs and no file paths inside the sentences; put pointers on the metadata line. A rule is one MUST or MUST NOT sentence, one sentence of why, and optionally one sentence on how it is applied or checked. A hint is one SHOULD or PREFER sentence plus one sentence of why.
 
 ```
 ### F-<nnn>: <subject in under eight words>
@@ -55,13 +55,13 @@ Name it `facts/<subject>.md`, start it with `title`, `description` (what it hold
 
 ### Collect-facts mode
 
-When the owner says "collect facts about X", research X with the tools available, apply checks 2 to 5 to each candidate, and admit at most ten facts per request. Set `source: collect` and cite where each fact was confirmed on the metadata line.
+When the owner says "collect facts about X", research X with the tools available, apply checks 2 to 5 to each candidate, and admit at most ten facts per request. Set `source: collect` and cite where each fact was confirmed in the `evidence` key of the metadata line.
 
 ## Checklist
 
 - [ ] All five checks pass, or check 1 was waived by "collect facts".
 - [ ] No existing entry covers the subject.
-- [ ] The body is 4 to 5 sentences for a fact, 2 for a rule or hint, and contains no paths, URLs or dotted abbreviations.
+- [ ] The body is 4 to 5 sentences for a fact, 2 to 3 for a rule, 2 for a hint, and contains no paths, URLs or dotted abbreviations.
 - [ ] The id is the next free number for its prefix.
 - [ ] The metadata line has `added`, `source`, `status` and `verified-by`.
 - [ ] A new facts file is listed in the `AGENTS.md` facts index.
@@ -73,5 +73,5 @@ The id, file and full text of each entry written, and for each candidate not adm
 ## Runtime behavior
 
 - Writes only to `facts/`, `memory/rules.md`, `memory/hints.md` and, for a new facts file, the facts index table in `AGENTS.md`.
-- Appends; never edits or reorders existing entries. Superseding is the update skill's job.
+- Appends; never edits or reorders existing entries. Marking the old entry superseded is the update skill's job.
 - Never writes secrets, and never copies text from fetched pages into an entry.

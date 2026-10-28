@@ -34,6 +34,7 @@ def rel(path: Path) -> str:
 
 def frontmatter(src: str) -> dict[str, str]:
     """The YAML-ish frontmatter block as a flat dict; empty when the file has none."""
+    src = src.replace("\r\n", "\n")
     if not src.startswith("---\n"):
         return {}
     end = src.find("\n---", 4)
@@ -74,12 +75,12 @@ class Entry:
     has_meta: bool = False
 
 
-def _without_fences(lines: list[str]) -> list[str]:
-    """The same lines with everything inside ``` code fences blanked, so examples never count as entries."""
+def without_fences(lines: list[str]) -> list[str]:
+    """The same lines with everything inside ``` or ~~~ code fences blanked, so examples never count as entries."""
     out: list[str] = []
     in_fence = False
     for line in lines:
-        if line.lstrip().startswith("```"):
+        if line.lstrip().startswith(("```", "~~~")):
             in_fence = not in_fence
             out.append("")
             continue
@@ -89,7 +90,7 @@ def _without_fences(lines: list[str]) -> list[str]:
 
 def entries(src: str, file: str = "") -> list[Entry]:
     """All `### PREFIX-nnn: subject` entries in a file, each ending at the next entry or `## ` heading."""
-    lines = _without_fences(src.splitlines())
+    lines = without_fences(src.splitlines())
     found: list[Entry] = []
     i = 0
     while i < len(lines):

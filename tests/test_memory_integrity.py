@@ -2,8 +2,10 @@
 
 These tests are the deterministic half of the memory system. They fail when an entry breaks the shared
 format, when an index drifts from its folder, when a fact is not 4 to 5 sentences, when a rule names no
-check, when a supersession points nowhere, when feedback is left pending, when the footprint is stale, or
-when a secret or a relative date enters memory. Source of truth for the format: memory/MAP.md.
+check, when a supersession points nowhere, when feedback is left pending or its disposition names nothing
+real, when the footprint is stale, when a secret or a relative date enters memory, when a document names a
+path that does not exist, or when a skill or prompt loses one of its seven sections. Source of truth for the
+format: memory/MAP.md.
 """
 
 from __future__ import annotations
@@ -37,11 +39,28 @@ PREFIX_BY_FILE = {
     "memory/feedback-log.md": "FB",
 }
 STATUSES = {"active", "superseded", "retired"}
-META_KEYS = {"added", "source", "status", "verified-by", "supersedes", "superseded-by", "confirmed", "reason", "scope"}
+META_KEYS = {"added", "source", "status", "verified-by", "supersedes", "superseded-by", "confirmed", "reason", "scope", "evidence"}
 NEEDS_CHECK = {"F", "R", "G"}
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 SOURCE_RE = re.compile(r"^(owner|collect|run|FB-\d{3,})$")
 RELATIVE_DATE_RE = re.compile(r"\b(yesterday|tomorrow|last week|last month|next week|recently|the other day)\b", re.I)
+HEADING_LIKE_RE = re.compile(r"^###\s*[A-Za-z]{1,3}-\d+")
+FEEDBACK_TEST_RE = re.compile(r"^tests/test_fb(\d{3,})_[a-z0-9_]+\.py$")
+PATH_TOKEN_RE = re.compile(r"^(?:AGENTS\.md|CLAUDE\.md|README\.md|LICENSE|(?:memory|facts|skills|prompts|verifiers|tests|scripts|\.claude|\.github)/[A-Za-z0-9_./-]*)$")
+DOC_FILES = (
+    "AGENTS.md",
+    "README.md",
+    "memory/MAP.md",
+    "facts/README.md",
+    "tests/README.md",
+    "tests/fixtures/README.md",
+    "memory/examples/README.md",
+    "verifiers/*.md",
+    "skills/*/SKILL.md",
+    "prompts/*.md",
+    ".claude/agents/*.md",
+)
+SEVEN_SECTIONS = ["Goal", "Objective", "Tasks", "Instructions", "Checklist", "Output", "Runtime behavior"]
 SECRET_RE = re.compile(
     r"(sk-[A-Za-z0-9]{20,}|ghp_[A-Za-z0-9]{30,}|AKIA[0-9A-Z]{16}|xox[baprs]-[A-Za-z0-9-]{10,}"
     r"|-----BEGIN [A-Z ]*PRIVATE KEY-----|(?:api[_-]?key|secret|token|password)\s*[:=]\s*['\"][^'\"]{8,}['\"])",
@@ -162,12 +181,16 @@ def test_facts_have_four_to_five_sentences():
 
 
 def test_facts_rules_and_guarantees_name_a_check():
+    log = h.entries(h.text("memory/feedback-log.md"), "memory/feedback-log.md")
+    pending_feedback = {e.id for e in log if re.search(r"^disposition: pending", e.body, re.M)}
     problems = []
     for entry in _typed_entries():
         if entry.prefix not in NEEDS_CHECK or entry.meta.get("status") != "active":
             continue
         value = entry.meta.get("verified-by", "")
         where = f"{entry.file}:{entry.line} {entry.id}"
+        if value == "pending" and entry.meta.get("source") in pending_feedback:
+            continue  # feedback handling is in progress; test_no_feedback_is_pending keeps the request open
         if not value or value == "pending":
             problems.append(f"{where}: `verified-by` must name a check or `none (<reason>)`")
             continue
@@ -258,12 +281,95 @@ def test_agents_md_is_under_200_lines():
 
 
 def test_feedback_tests_name_their_feedback():
+    log_ids = {e.id for e in h.entries(h.text("memory/feedback-log.md"), "memory/feedback-log.md")}
     problems = []
     for path in h.files("tests/test_*.py"):
         name = h.rel(path)
         if name == "tests/test_memory_integrity.py":
             continue
-        head = path.read_text(encoding="utf-8")[:1500]
-        if not re.search(r"\bFB-\d{3,}\b", head):
-            problems.append(name)
-    assert not problems, f"feedback tests must name their FB id in the module docstring: {problems}"
+        match = FEEDBACK_TEST_RE.match(name)
+        if not match:
+            problems.append(f"{name}: feedback tests are named tests/test_fb<nnn>_<slug>.py")
+            continue
+        fb = f"FB-{match.group(1)}"
+        if fb not in path.read_text(encoding="utf-8")[:1500]:
+            problems.append(f"{name}: the module docstring must name {fb}")
+        if fb not in log_ids:
+            problems.append(f"{name}: {fb} is not in memory/feedback-log.md")
+    assert not problems, "\n".join(problems)
+
+
+def test_feedback_dispositions_point_to_real_things():
+    ids = {e.id for e in _typed_entries()}
+    problems = []
+    for entry in h.entries(h.text("memory/feedback-log.md"), "memory/feedback-log.md"):
+        where = f"memory/feedback-log.md:{entry.line} {entry.id}"
+        match = re.search(r"^disposition: (.+)$", entry.body, re.M)
+        if not match:
+            continue
+        value = match.group(1).strip()
+        if value == "pending" or value.startswith("not kept ("):
+            continue
+        parts = dict(p.strip().split(" ", 1) for p in value.split(" | ") if " " in p.strip())
+        if set(parts) != {"fact", "tests", "updates"}:
+            problems.append(f"{where}: disposition must be `fact <ids> | tests <paths> | updates <ids>` or `not kept (<reason>)`")
+            continue
+        for key in ("fact", "updates"):
+            for ref in re.split(r"[,\s]+", parts[key]):
+                if ref and ref != "none" and ref not in ids:
+                    problems.append(f"{where}: {key} names {ref}, which is not an entry")
+        for ref in re.split(r"[,\s]+", parts["tests"]):
+            if ref and ref != "none" and not (h.ROOT / ref).exists():
+                problems.append(f"{where}: tests names {ref}, which does not exist")
+    assert not problems, "\n".join(problems)
+
+
+def test_no_malformed_entry_headings():
+    problems = []
+    for path in h.files(FACT_FILES) + h.files(MEMORY_FILES):
+        for i, line in enumerate(h.without_fences(path.read_text(encoding="utf-8").splitlines()), 1):
+            if HEADING_LIKE_RE.match(line) and not h.ENTRY_RE.match(line):
+                problems.append(f"{h.rel(path)}:{i}: {line.strip()!r} is not `### PREFIX-nnn: subject`")
+    assert not problems, "\n".join(problems)
+
+
+def test_placeholder_removed_once_entries_exist():
+    stale = []
+    for path in h.files(FACT_FILES) + h.files(MEMORY_FILES):
+        src = path.read_text(encoding="utf-8")
+        if "(no entries yet)" in src and h.entries(src, h.rel(path)):
+            stale.append(h.rel(path))
+    assert not stale, f"files that hold entries but still say (no entries yet): {stale}"
+
+
+def test_docs_reference_existing_paths():
+    problems = []
+    for pattern in DOC_FILES:
+        for path in h.files(pattern):
+            src = "\n".join(h.without_fences(path.read_text(encoding="utf-8").splitlines()))
+            for token in re.findall(r"`([^`\n]+)`", src):
+                first = token.split()[0] if token.split() else ""
+                if any(c in first for c in "<>{}*") or not PATH_TOKEN_RE.match(first):
+                    continue
+                target, _, func = first.partition("::")
+                if not (h.ROOT / target).exists():
+                    problems.append(f"{h.rel(path)}: `{first}` does not exist")
+                elif func and f"def {func}(" not in (h.ROOT / target).read_text(encoding="utf-8"):
+                    problems.append(f"{h.rel(path)}: `{first}` names a function that does not exist")
+    assert not problems, "\n".join(problems)
+
+
+def test_agents_index_covers_skills_and_prompts():
+    agents = h.text("AGENTS.md")
+    missing = [h.rel(p) for p in h.files("skills/*/SKILL.md") + h.files("prompts/*.md") if f"`{h.rel(p)}`" not in agents]
+    assert not missing, f"skills or prompts missing from AGENTS.md: {missing}"
+
+
+def test_skills_and_prompts_have_the_seven_sections():
+    problems = []
+    for path in h.files("skills/*/SKILL.md") + h.files("prompts/*.md"):
+        lines = h.without_fences(path.read_text(encoding="utf-8").splitlines())
+        headings = [line[3:].strip() for line in lines if line.startswith("## ")]
+        if headings != SEVEN_SECTIONS:
+            problems.append(f"{h.rel(path)}: sections are {headings}")
+    assert not problems, "every skill and prompt has exactly these `## ` sections, in order: " + ", ".join(SEVEN_SECTIONS) + "\n" + "\n".join(problems)

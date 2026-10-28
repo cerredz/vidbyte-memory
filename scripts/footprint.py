@@ -25,6 +25,7 @@ FOOTPRINT = ROOT / "memory" / "footprint.md"
 RUN_LOG = ROOT / "memory" / "run-log.md"
 ENTRY_RE = re.compile(r"^### ([A-Z]{1,2})-(\d{3,}): ")
 STATUS_RE = re.compile(r"^-- .*\bstatus: (active|superseded|retired)\b")
+TEST_DEF_RE = re.compile(r"^\s*(?:async\s+)?def test_")
 STATUSES = ("active", "superseded", "retired")
 
 AREAS = [
@@ -61,7 +62,7 @@ def _entries_by_status(path: Path) -> dict[str, int]:
     current: str | None = None
     in_fence = False
     for line in path.read_text(encoding="utf-8").splitlines():
-        if line.lstrip().startswith("```"):
+        if line.lstrip().startswith(("```", "~~~")):
             in_fence = not in_fence
             continue
         if in_fence:
@@ -96,7 +97,7 @@ def scan() -> dict:
         data["feedback"]["pending"] = sum(1 for line in src.splitlines() if line.startswith("disposition: pending"))
     for path in sorted((ROOT / "tests").glob("test_*.py")):
         data["tests"]["files"] += 1
-        data["tests"]["functions"] += sum(1 for line in path.read_text(encoding="utf-8").splitlines() if line.startswith("def test_"))
+        data["tests"]["functions"] += sum(1 for line in path.read_text(encoding="utf-8").splitlines() if TEST_DEF_RE.match(line))
     skip = {"README.md", "INDEX.md", "_template.md"}
     data["verifiers"] = sum(1 for path in (ROOT / "verifiers").glob("*.md") if path.name not in skip)
     return data

@@ -19,10 +19,10 @@ Check the artifact against every active entry in `memory/rules.md`, `memory/guar
 ## Instructions
 
 - Judge from the artifact alone. The author's intent, plan or explanation is not available to you and would not change the verdict.
-- A rule's MUST or MUST NOT is binary. A fact describes what is true; the artifact fails it when the artifact asserts or assumes the opposite.
+- A rule's MUST or MUST NOT is binary. A fact fails when the artifact contradicts it or ignores the way the fact says to apply it.
 - A hint is not checked here. Hints are preferences and are not failures.
 - When two active entries conflict, report the conflict as a failure against both ids so the owner can resolve it; do not pick one.
-- When an entry names a `verified-by` test, you may still check it; your verdict and the test's result are both recorded.
+- Skip entries whose `verified-by` names a test; the test half of the round covers them.
 - A property you cannot check from the artifact is a `FAIL` with the reason, never a pass.
 
 ## Checklist

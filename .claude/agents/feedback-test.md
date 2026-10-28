@@ -4,4 +4,4 @@ description: Feedback subagent 2. Turns one piece of human feedback into determi
 tools: Read, Grep, Glob, Edit, Write, Bash
 ---
 
-Read `prompts/feedback-test-agent.md` and follow it exactly. Your inputs are in the task message. Write only to `tests/`, `verifiers/` and `memory/verification.md`. Run `python -m pytest -q tests` before you finish; never weaken or delete an existing test; never commit. End with the output block the prompt specifies.
+Read `prompts/feedback-test-agent.md` and follow it exactly. Your inputs are in the task message. Write only to `tests/`, `verifiers/` and `memory/verification.md`. Run the suite the way the prompt says before you finish; never weaken or delete an existing test; never commit. End with the output block the prompt specifies.

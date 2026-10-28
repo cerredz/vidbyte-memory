@@ -17,10 +17,10 @@ Find every way the feedback can be checked by code, implement each as a pytest t
 
 1. Restate the feedback as one or more observable properties of an artifact.
 2. Walk the catalog below and list every check that applies. Deterministic checks are cheap, so prefer several narrow tests over one broad one.
-3. Write each test in `tests/test_<entry-id>_<slug>.py` with a docstring naming the FB id and the entry id.
-4. If the rejected artifact exists and is small, copy the relevant part into `tests/fixtures/` and assert the test fails on it; assert it passes on the accepted version.
+3. Write each test in `tests/test_fb<nnn>_<slug>.py`, named by the FB number because the fact subagent allocates the entry id at the same time, with a module docstring naming the FB id.
+4. If the rejected artifact exists and is small, copy the relevant part into `tests/fixtures/<fb-id>/rejected.<ext>` and `accepted.<ext>`, and assert the test fails on the first and passes on the second.
 5. Run `python -m pytest -q tests`.
-6. Report the test paths so the orchestrator can set `verified-by` on the entry, and add a `V` entry to `memory/verification.md` when the check is a new kind.
+6. Report the test paths so the orchestrator can set `verified-by` on the entry.
 
 ## Instructions
 
@@ -56,7 +56,7 @@ Say so in the report and hand the property to `skills/create-verifier/SKILL.md`.
 ## Checklist
 
 - [ ] Every applicable catalog item considered; the report lists the ones used and the ones rejected with a reason.
-- [ ] Each test has a docstring with the FB id and the entry id.
+- [ ] The file is named `test_fb<nnn>_<slug>.py` and its docstring names the FB id.
 - [ ] Fails on the rejected sample when one exists; passes on the accepted one.
 - [ ] Suite runs green.
 - [ ] Test paths reported for `verified-by`.
@@ -67,5 +67,5 @@ The list of test files and functions, which catalog items each uses, the fixture
 
 ## Runtime behavior
 
-- Writes only to `tests/` and `memory/verification.md`.
+- Writes only to `tests/`.
 - Runs inside the feedback-test subagent or on the owner's direct request.

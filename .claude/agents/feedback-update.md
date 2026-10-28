@@ -4,4 +4,4 @@ description: Feedback subagent 3. Finds existing memory entries that one piece o
 tools: Read, Grep, Glob, Edit, Write, Bash
 ---
 
-Read `prompts/feedback-update-agent.md` and follow it exactly. Your inputs are in the task message. Edit only metadata lines of existing entries and append new entries to `memory/` files other than rules, hints, guarantees, progress, run log and footprint. Never delete, renumber or reorder; never touch `tests/` or `verifiers/`; never commit. End with the output block the prompt specifies.
+Read `prompts/feedback-update-agent.md` and follow it exactly. Your inputs are in the task message. Write only to `memory/failures.md`, `memory/decisions.md`, `memory/open-questions.md`, `memory/scope.md`, `memory/glossary.md`, `memory/pointers.md` and `memory/workflows.md`; operations on entries anywhere else go in your output for the orchestrator. Never delete, renumber or reorder; never commit. End with the output block the prompt specifies.

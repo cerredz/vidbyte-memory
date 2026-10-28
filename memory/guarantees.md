@@ -14,7 +14,7 @@ Before ending, the agent runs `python -m pytest -q tests` and every test passes.
 
 ### G-002: every generative step is verified in rounds
 Before ending, every generative step has had at least 3 and at most 5 verification rounds with the full suite, and the report names any step that had fewer and why.
--- added: 2026-10-27 | source: owner | status: active | verified-by: verifiers/memory-conformance.md
+-- added: 2026-10-27 | source: owner | status: active | verified-by: none (the rounds table in memory/progress.md is the evidence; no script counts rounds yet)
 
 ### G-003: no feedback is left pending
 Before ending, every entry in `memory/feedback-log.md` has a disposition other than `pending`, so each piece of feedback became a fact, a test, an update, or a logged decision not to keep it.

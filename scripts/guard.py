@@ -1,10 +1,11 @@
 """Stop hook: block the end of a turn while a guarantee is unmet.
 
-Checks, in order: the test suite passes (G-001), no feedback is pending (G-003), and no change under
-memory/, facts/, tests/, verifiers/ or AGENTS.md is uncommitted or unpushed (G-004). When a check fails it
-prints {"decision": "block", "reason": ...} so Claude Code keeps the turn going, up to MAX_ROUNDS times in
-a row; after that it lets the turn end and reports the unmet guarantees in a systemMessage, so a check
-that cannot pass does not hold the session forever.
+Checks, in order: the test suite passes (G-001), no feedback is pending (G-003), and nothing in the
+repo is uncommitted or unpushed (G-004). When a check fails it prints {"decision": "block", "reason": ...}
+so Claude Code keeps the turn going, up to MAX_ROUNDS times in a row within one session; after that it lets
+the turn end and reports the unmet guarantees in a systemMessage, so a check that cannot pass does not hold
+the session forever. The round counter lives in .claude/.guard_state.json with the session id that owns it,
+so a new session starts at round 1.
 
 Usage: python scripts/guard.py      (reads the hook JSON on stdin when present; works without it)
 Standard library only.
@@ -20,7 +21,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 STATE = ROOT / ".claude" / ".guard_state.json"
 MAX_ROUNDS = 5
-WATCHED = ["memory", "facts", "tests", "verifiers", "AGENTS.md"]
 
 
 def run(cmd: list[str]) -> subprocess.CompletedProcess:
@@ -48,9 +48,9 @@ def check_pending_feedback() -> str | None:
 def check_committed() -> str | None:
     if run(["git", "rev-parse", "--is-inside-work-tree"]).returncode != 0:
         return None
-    status = run(["git", "status", "--porcelain", "--", *WATCHED]).stdout.strip()
+    status = run(["git", "status", "--porcelain"]).stdout.strip()
     if status:
-        return "G-004: memory changes are uncommitted. Append the run-log line and run `python scripts/footprint.py --commit --title \"<request>\"`."
+        return "G-004: changes are uncommitted. Run `python scripts/footprint.py --commit --title \"<request>\"`; it appends the run-log line, commits everything and pushes."
     upstream = run(["git", "rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}"])
     if upstream.returncode != 0:
         return None
@@ -60,35 +60,44 @@ def check_committed() -> str | None:
     return None
 
 
-def load_rounds() -> int:
+def load_rounds(session: str) -> int:
+    """Rounds already spent in this session; a different session id in the state file means zero."""
     try:
-        return int(json.loads(STATE.read_text(encoding="utf-8")).get("rounds", 0))
-    except (OSError, ValueError):
+        state = json.loads(STATE.read_text(encoding="utf-8"))
+        return int(state.get("rounds", 0)) if state.get("session") == session else 0
+    except (OSError, ValueError, AttributeError):
         return 0
 
 
-def save_rounds(rounds: int) -> None:
+def save_rounds(session: str, rounds: int) -> None:
     STATE.parent.mkdir(parents=True, exist_ok=True)
-    STATE.write_text(json.dumps({"rounds": rounds}), encoding="utf-8")
+    STATE.write_text(json.dumps({"session": session, "rounds": rounds}), encoding="utf-8")
+
+
+def read_payload() -> dict:
+    """The hook JSON from stdin when the hook runs under Claude Code; empty when run by hand."""
+    if sys.stdin.isatty():
+        return {}
+    try:
+        payload = json.loads(sys.stdin.read() or "{}")
+    except ValueError:
+        return {}
+    return payload if isinstance(payload, dict) else {}
 
 
 def main() -> int:
-    if not sys.stdin.isatty():
-        try:
-            json.loads(sys.stdin.read() or "{}")  # the hook payload; read so the pipe closes cleanly
-        except ValueError:
-            pass
+    session = str(read_payload().get("session_id", "manual"))
     problems = [p for p in (check_tests(), check_pending_feedback(), check_committed()) if p]
     if not problems:
-        save_rounds(0)
+        save_rounds(session, 0)
         return 0
-    rounds = load_rounds() + 1
-    save_rounds(rounds)
+    rounds = load_rounds(session) + 1
+    save_rounds(session, rounds)
     reason = "Unmet guarantees before ending this request:\n\n" + "\n\n".join(problems)
     if rounds <= MAX_ROUNDS:
         print(json.dumps({"decision": "block", "reason": f"{reason}\n\n(guard round {rounds} of {MAX_ROUNDS})"}))
         return 0
-    save_rounds(0)
+    save_rounds(session, 0)
     print(json.dumps({"systemMessage": f"guard gave up after {MAX_ROUNDS} rounds; the request is NOT finished:\n{reason}"}))
     return 0
 

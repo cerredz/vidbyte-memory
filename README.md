@@ -2,7 +2,7 @@
 
 A GitHub template for a task repo whose agent learns from human feedback. Memory lives in typed markdown files, feedback is handled by three subagents, every generation is verified in rounds, and every request ends with a commit that says how the memory footprint changed.
 
-The design rests on three findings from the published memory systems and papers: memory files must never be rewritten whole, memory is context rather than enforcement, and nobody checks whether a stored fact is true at write time. So facts stay slim and rare, deterministic tests carry the enforcement, and a human correction is the only way a fact or rule gets in.
+The design rests on three findings from the published memory systems: memory files must never be rewritten whole (the context collapse the ACE paper measured), memory is context rather than enforcement (Claude Code's auto memory), and stored facts are checked at read time if ever, never at write time (GitHub Copilot verifies its memory citations when they are used). So facts stay slim and rare, deterministic tests carry the enforcement, and a human correction is the only way a fact or rule gets in.
 
 ## The loop
 
@@ -39,7 +39,7 @@ Requirements: Python 3.9 or later, `pytest`, `git`, and a remote named `origin` 
 ## Harness notes
 
 - **Claude Code.** Works out of the box. `.claude/agents/` wraps the three feedback subagents and a generic verifier runner, and `.claude/settings.json` installs a Stop hook that blocks ending a turn while tests fail, feedback is pending, or memory changes are uncommitted. Delete `.claude/settings.json` to turn the hook off; the protocol in `AGENTS.md` still asks for the same behavior.
-- **Codex, Cursor, others.** `AGENTS.md`, the skills, the prompts and the scripts work unchanged. Where the harness has no subagents, run the three feedback prompts one after another in fresh context.
+- **Codex, Cursor, others.** `AGENTS.md`, the skills, the prompts and the scripts work unchanged. Where the harness has no subagents, the agent runs the three feedback prompts one after another itself, reading only each prompt and its inputs. The skills live in `skills/` rather than in the Claude Code-only skills folder, so every harness finds them; `AGENTS.md` links them by path.
 
 ## Design rules the files follow
 

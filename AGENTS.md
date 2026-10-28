@@ -1,10 +1,8 @@
 # Memory-backed task repo
 
-This repo gives an agent task-specific memory that grows from human feedback. Facts stay slim and rare, every piece of feedback becomes a fact, a deterministic test, or a memory update, every generative step is verified in rounds, and every request ends with a commit that records how the memory footprint changed. Read this file first on every request. It is an index, not the memory: open the files it points to only when their "load when" matches the work.
+Read this file first on every request. It is an index, not the memory: open the files it points to only when their "load when" matches the work.
 
 ## Task
-
-<!-- Owner: replace this block with the recurring task this repo serves: what it produces, for whom, and what "done" means. Keep it under 15 lines. -->
 
 ## Goal
 
@@ -14,27 +12,35 @@ Fewer corrections from the owner over time, with every correction captured once 
 
 Produce the task's output while applying the facts and rules in memory, verifying each generative step with the full suite, turning every piece of feedback into memory and checks, and leaving the repo committed with the footprint change recorded.
 
-## Runtime behavior
+## Tasks
 
 ### Start of a request
 1. Read `memory/progress.md`, `memory/guarantees.md` and `memory/rules.md`.
 2. From the memory index below, open only the files whose "load when" matches this request. Do not read the rest.
 3. Grep `facts/` for the subjects this request touches and read the matching fact files.
-4. Write the plan into `memory/progress.md`. Assume the context may be reset at any moment, so keep progress current.
+4. Write the plan into `memory/progress.md`, citing the ids of the facts, rules and guarantees it applies.
 
-### During generation
+### Generation
 - Every generative step gets 3 to 5 verification rounds with the full suite: `tests/` plus every verifier in `verifiers/INDEX.md` whose trigger matches the artifact. Follow `skills/verify-generation/SKILL.md`.
-- Cite the id of every fact, rule or guarantee you apply, for example `R-004`.
-- Never edit `facts/`, `memory/rules.md`, `memory/guarantees.md` or `tests/` as a side effect of generation. Those change only through feedback handling.
 
-### On human feedback
+### Human feedback
 - A correction, a rejection, a strong confirmation, "remember this", or "collect facts about X" triggers `skills/handle-feedback/SKILL.md`: log the feedback verbatim, launch the three feedback subagents, stitch their results, run the tests.
 
+### Pausing for the owner
+- To ask the owner anything: write the question as a `Q` entry in `memory/open-questions.md`, give every pending feedback entry a disposition (`not kept (awaiting owner, Q-nnn)` is allowed), run `python scripts/footprint.py --commit --title "<request> (paused)"`, then stop. The owner's answer arrives as feedback.
+
 ### End of a request
-1. Run `python -m pytest -q tests`. Every test must pass. A failing test is fixed or the request is reported as unfinished, never worked around and never deleted.
+1. Run `python scripts/footprint.py --write`, then `python -m pytest -q tests`. Every test must pass. A failing test is fixed or the request is reported as unfinished, never worked around and never deleted.
 2. No entry in `memory/feedback-log.md` may be left with `disposition: pending`.
-3. Append one line to `memory/run-log.md`, then run `python scripts/footprint.py --commit --title "<request in a few words>"`. It regenerates `memory/footprint.md`, commits every change with the footprint delta in the message, and pushes.
-4. Report what was verified, what failed, and how memory changed.
+3. Run `python scripts/footprint.py --commit --title "<request in a few words>"`. It regenerates `memory/footprint.md`, appends this request's line to `memory/run-log.md`, commits every change with the footprint delta in the message, and pushes.
+4. Write the report described under Output.
+
+## Instructions
+
+- Cite the id of every fact, rule or guarantee you apply, for example `R-004`, in the plan in `memory/progress.md` and in the report.
+- Never edit `facts/`, `memory/rules.md`, `memory/guarantees.md` or `tests/` as a side effect of generation. Those change only through feedback handling.
+- Keep `memory/progress.md` current at each phase. Assume the context may be reset at any moment.
+- Nothing is marked done without the command and its output, or the verifier verdict, that shows it.
 
 ## Memory index
 
@@ -89,15 +95,20 @@ Produce the task's output while applying the facts and rules in memory, verifyin
 - Verification agents: `verifiers/INDEX.md` lists each verifier and the artifacts it triggers on. `verifiers/memory-conformance.md` runs on everything.
 - Deterministic checks: `tests/`. `tests/README.md` explains how feedback becomes a test.
 
-## Checklist before ending
+## Checklist
 
 - [ ] Every generative step had at least 3 verification rounds, or the report says which did not and why.
-- [ ] `python -m pytest -q tests` passes.
+- [ ] `python -m pytest -q tests` passes after `python scripts/footprint.py --write`.
 - [ ] Every feedback entry has a disposition other than `pending`.
 - [ ] `memory/progress.md` reflects the true state, and nothing is marked done without evidence.
-- [ ] `memory/run-log.md` has this request's line, and `scripts/footprint.py --commit` ran and pushed.
-- [ ] The report names what was verified, what failed, and how memory changed.
+- [ ] `scripts/footprint.py --commit` ran and pushed, so `memory/run-log.md` has this request's line.
 
-## Guarantees
+## Output
 
-The entries in `memory/guarantees.md` are enforced by `scripts/guard.py`, a Claude Code Stop hook configured in `.claude/settings.json`, and by `tests/test_memory_integrity.py`. Memory is context. The guard and the tests are the enforcement.
+The request report: what was produced, what was verified and how, what failed, how memory changed (the footprint delta from the commit), each feedback entry's disposition, and any step with fewer than 3 rounds and why.
+
+## Runtime behavior
+
+- Loaded on every request; `CLAUDE.md` imports it for Claude Code. The indexed files are opened only when their "load when" matches.
+- The entries in `memory/guarantees.md` are enforced by `scripts/guard.py`, a Claude Code Stop hook configured in `.claude/settings.json`, and by `tests/test_memory_integrity.py`. Memory is context; the guard and the tests are the enforcement.
+- Without the hook (another harness, or `.claude/settings.json` removed), the checklist above is the same contract, kept by hand.
