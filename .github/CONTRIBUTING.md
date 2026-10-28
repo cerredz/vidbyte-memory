@@ -14,7 +14,7 @@ Each of these fits in one file and one PR:
 | Contribution | Where it goes |
 |---|---|
 | A verifier recipe for a kind of artifact (code review, data table, prose) | `verifiers/<name>.md`, copied from `verifiers/_template.md`, plus a row in `verifiers/INDEX.md` |
-| A note on running the template in another harness (Codex, Cursor, Gemini CLI, OpenCode, Aider) | an issue first, then the harness section of `README.md` |
+| A note on running the template in another harness (Codex, Cursor, Gemini CLI, OpenCode, Aider) | an issue first, then the Works with table in `README.md` |
 | A fix to a skill, a prompt, `scripts/` or `tests/` | the file itself |
 | A report that a correction did not stick | the "A correction didn't stick" issue form; accepted cases become tests |
 
