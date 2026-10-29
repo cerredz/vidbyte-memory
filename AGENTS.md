@@ -97,6 +97,7 @@ The request stops when the end-of-request steps above have run: the suite is gre
 | `skills/create-verifier/SKILL.md` | a check needs judgment a test cannot encode |
 | `skills/update-memory/SKILL.md` | an existing entry must be superseded, retired, merged or confirmed |
 | `skills/verify-generation/SKILL.md` | every generative step |
+| `skills/install-memory/SKILL.md` | the owner asks to add this memory to another repo, or to repair an install |
 
 ## Subagents and verifiers
 

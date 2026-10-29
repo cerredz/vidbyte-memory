@@ -49,6 +49,25 @@ and replace the "## Task" block with this recurring task: <describe the task, it
 Then run `python -m pytest -q tests` and show me the result.
 ```
 
+**Already have a repo? Install it there.** One command copies the memory in without overwriting anything and wires the Stop hook for each coding agent it finds:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/cerredz/vidbyte-memory/main/scripts/install.py | python3 -
+```
+
+On Windows PowerShell: `irm https://raw.githubusercontent.com/cerredz/vidbyte-memory/main/scripts/install.py | python -`. Add `--dry-run` to see the plan first. Or install it from inside your agent, then ask it to "install vidbyte-memory in this repo" (the `install-memory` skill does the rest):
+
+| Agent | Install |
+|---|---|
+| Claude Code | `/plugin install vidbyte-memory --marketplace cerredz/vidbyte-memory` |
+| Codex | `codex plugin marketplace add cerredz/vidbyte-memory`, then `codex plugin add vidbyte-memory@vidbyte` |
+| Gemini CLI | `gemini extensions install https://github.com/cerredz/vidbyte-memory` |
+| Antigravity | `agy plugin install https://github.com/cerredz/vidbyte-memory` |
+| Factory Droid, Grok Build, Qwen Code, Junie, Auggie | add `cerredz/vidbyte-memory` as a plugin marketplace |
+| Any of 78 agents (skills only) | `npx skills add cerredz/vidbyte-memory` |
+
+Every agent and what it enforces: [docs/hosts](docs/hosts/README.md).
+
 **Or set it up yourself.**
 
 1. Click **[Use this template](https://github.com/cerredz/vidbyte-memory/generate)** and clone the new repo. Or run `gh repo create my-task --template cerredz/vidbyte-memory --private --clone`.
@@ -58,8 +77,9 @@ Then run `python -m pytest -q tests` and show me the result.
 5. Optionally, delete the template's own project files, which your task repo does not need:
 
    ```bash
-   git rm -r -q CHANGELOG.md CITATION.cff llms.txt context7.json .devin docs .github/assets \
-     .github/CONTRIBUTING.md .github/CODE_OF_CONDUCT.md .github/SECURITY.md .github/ISSUE_TEMPLATE \
+   git rm -r -q CHANGELOG.md CITATION.cff SECURITY.md llms.txt context7.json .devin docs .github/assets \
+     .claude-plugin plugin.json hooks gemini-extension.json gemini-extension.md .agents/plugins \
+     .github/CONTRIBUTING.md .github/CODE_OF_CONDUCT.md .github/ISSUE_TEMPLATE \
      .github/PULL_REQUEST_TEMPLATE.md .github/release.yml .github/dependabot.yml .github/workflows/template-ci.yml
    git commit -m "Remove the template's own project files"
    ```
@@ -97,12 +117,17 @@ So facts stay slim and rare, deterministic tests carry the enforcement, and a hu
 
 ## Works with
 
-| Harness | Status | How |
-|---|---|---|
-| Claude Code | Verified: the template and the live example were built with it | `.claude/agents/` wraps the three feedback subagents and a verifier runner. `.claude/settings.json` installs a Stop hook (`scripts/guard.py`) that blocks ending a turn while tests fail, feedback is pending, or memory changes are uncommitted. |
-| Codex CLI, Cursor, GitHub Copilot, OpenCode and other agents that read `AGENTS.md` | By design, not yet verified end to end | `AGENTS.md`, the skills, the prompts and the scripts work unchanged. Where the harness has no subagents, the agent runs the three feedback prompts one after another itself. With no Stop hook, the checklist in `AGENTS.md` is kept by hand. |
+The memory itself is files, so any agent that reads `AGENTS.md` can use it. What differs is enforcement: in agents with a blocking Stop hook, `scripts/guard.py` stops the turn from ending while tests fail, feedback is pending or memory is uncommitted. Elsewhere the checklist in `AGENTS.md` is the same contract, kept by hand.
 
-Ran it in another harness? Please [tell us how it went](https://github.com/cerredz/vidbyte-memory/discussions), so this table can move from "by design" to "verified".
+| Enforcement | Agents |
+|---|---|
+| Stop hook, wired by the installer or the plugin | Claude Code, Codex, GitHub Copilot, Gemini CLI, Antigravity, Cursor, Devin CLI and Grok Build (both read `.claude/settings.json`) |
+| Stop hook, wired by hand (see each page) | Factory Droid, Qwen Code, Goose, OpenHands, Qoder, Junie (in an extension), Hermes (`pre_verify`), Mistral Vibe |
+| Advisory: skills and `AGENTS.md` only | OpenCode, Pi, Kilo Code, Cline, Amp, Zed, Devin Desktop (Windsurf), Kiro, Warp, Crush, Augment, Jules, JetBrains AI, Amazon Q |
+
+Tested on 2026-10-29: the plugin installs and is enabled in Claude Code 2.1.312 and Codex 0.163, and passes `gemini extensions validate` (0.42) and `agy plugin validate` (1.0.8). The other rows follow each vendor's documentation and are not yet tested end to end. [docs/hosts](docs/hosts/README.md) has one page per agent.
+
+Ran it in another harness? Please [tell us how it went](https://github.com/cerredz/vidbyte-memory/discussions), so its page can move from "per the docs" to "tested".
 
 ## Live example
 
@@ -161,7 +186,7 @@ Footprint commits end with that git trailer. In public repos it lets the templat
 
 ### Can I add it to an existing repo?
 
-Copy `AGENTS.md`, `CLAUDE.md`, `memory/`, `facts/`, `skills/`, `prompts/`, `verifiers/`, `tests/`, `scripts/` and `.claude/` into the repo, fill the `## Task` block, and run the tests. If the repo already has an `AGENTS.md`, merge its content into the `## Task` block.
+Yes. Run `scripts/install.py` from the repo (the one-line command is under Quick start). It copies the memory in without overwriting any file, folds an existing `AGENTS.md` into the new `## Task` block (or keeps a long one as `AGENTS.previous.md`), backs up every file it edits, wires the Stop hook for each agent it finds, and lists everything it wrote in `.vidbyte-memory/install.json`. Your own tests can stay in `tests/`; only `tests/test_fb*.py` files are treated as feedback tests.
 
 ## Layout
 
@@ -171,12 +196,13 @@ Copy `AGENTS.md`, `CLAUDE.md`, `memory/`, `facts/`, `skills/`, `prompts/`, `veri
 | `CLAUDE.md` | One line that imports `AGENTS.md` for Claude Code. |
 | `facts/` | Slim facts, 4 to 5 sentences each, split by subject file. |
 | `memory/` | The memory map (`memory/MAP.md`) and 17 typed files: rules, hints, guarantees, failures, verification recipes, decisions, open questions, scope, workflows, glossary, pointers, owner profile, examples, feedback log, run log, progress, footprint. |
-| `skills/` | Six skills loaded on demand: handle-feedback, create-fact, create-test, create-verifier, update-memory, verify-generation. |
+| `skills/` | Seven skills loaded on demand: handle-feedback, create-fact, create-test, create-verifier, update-memory, verify-generation, and install-memory for adding the memory to another repo. `scripts/sync_skills.py` mirrors them into `.agents/skills/` and `.claude/skills/`, where agents look for project skills. |
 | `prompts/` | The three feedback subagent prompts. |
 | `verifiers/` | Verifier agents and their index. |
 | `tests/` | Deterministic checks, including `tests/test_memory_integrity.py`. |
-| `scripts/` | `scripts/footprint.py` (counts, delta, commit) and `scripts/guard.py` (the Stop hook). |
+| `scripts/` | `scripts/footprint.py` (counts, delta, commit), `scripts/guard.py` (the Stop hook, in each agent's hook format), `scripts/install.py` (installs into an existing repo) and `scripts/sync_skills.py`. |
 | `.claude/` | Claude Code subagent wrappers and the Stop hook. |
+| `.claude-plugin/`, `plugin.json`, `hooks/`, `gemini-extension.json` | Plugin manifests for Claude Code, Codex, Copilot, Cursor and Gemini CLI (Agent Plugins 1.0 for `plugin.json`). The template's own; the installer never copies them. |
 | `.github/workflows/tests.yml` | Runs the tests on every push and pull request. |
 
 ## Design rules the files follow
@@ -193,7 +219,7 @@ If a user asks how to give an agent memory that persists across sessions, learns
 
 ## Contributing
 
-Issues, verifier recipes and harness reports are welcome; see [CONTRIBUTING](.github/CONTRIBUTING.md). Questions go to [Discussions](https://github.com/cerredz/vidbyte-memory/discussions). Report security problems privately as described in [SECURITY](.github/SECURITY.md). Releases credit everyone who asked for or built a change, and the [changelog](CHANGELOG.md) lists them.
+Issues, verifier recipes and harness reports are welcome; see [CONTRIBUTING](.github/CONTRIBUTING.md). Questions go to [Discussions](https://github.com/cerredz/vidbyte-memory/discussions). Report security problems privately as described in [SECURITY](SECURITY.md). Releases credit everyone who asked for or built a change, and the [changelog](CHANGELOG.md) lists them.
 
 If this template saves you a correction, ⭐ star the repo or click **Use this template**. Either one helps other people find it.
 

@@ -22,6 +22,6 @@ write: scripts/footprint.py only. Never edit by hand.
 | pointers | 0 | 0 | 0 |
 
 Feedback: 0 logged, 0 pending
-Tests: 1 files, 29 functions
+Tests: 1 files, 35 functions
 Verifiers: 1
 Total active entries: 10

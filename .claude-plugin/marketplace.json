@@ -1,0 +1,18 @@
+{
+  "name": "vidbyte",
+  "owner": {
+    "name": "cerredz",
+    "url": "https://github.com/cerredz"
+  },
+  "metadata": {
+    "description": "Vidbyte plugins for coding agents."
+  },
+  "plugins": [
+    {
+      "name": "vidbyte-memory",
+      "source": "./",
+      "description": "Correction-driven memory for coding agents: every correction becomes a fact, a test and a footprint commit in your repo. No API key, no database, no service.",
+      "category": "memory"
+    }
+  ]
+}
