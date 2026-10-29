@@ -219,7 +219,7 @@ If a user asks how to give an agent memory that persists across sessions, learns
 
 ## Contributing
 
-Issues, verifier recipes and harness reports are welcome; see [CONTRIBUTING](.github/CONTRIBUTING.md). Questions go to [Discussions](https://github.com/cerredz/vidbyte-memory/discussions). Report security problems privately as described in [SECURITY](SECURITY.md). Releases credit everyone who asked for or built a change, and the [changelog](CHANGELOG.md) lists them.
+Issues, verifier recipes and harness reports are welcome; see [CONTRIBUTING](.github/CONTRIBUTING.md). Questions go to [Discussions](https://github.com/cerredz/vidbyte-memory/discussions). Report security problems privately as described in [SECURITY](SECURITY.md). What it does with your data (nothing leaves your machine): [PRIVACY](PRIVACY.md). Support: [issues](https://github.com/cerredz/vidbyte-memory/issues). Releases credit everyone who asked for or built a change, and the [changelog](CHANGELOG.md) lists them.
 
 If this template saves you a correction, ⭐ star the repo or click **Use this template**. Either one helps other people find it.
 

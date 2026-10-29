@@ -28,7 +28,8 @@
         "displayName": "vidbyte-memory",
         "shortDescription": "Memory that learns from your corrections, enforced by tests.",
         "developerName": "cerredz",
-        "category": "Developer Tools"
+        "category": "Developer Tools",
+        "privacyPolicyURL": "https://github.com/cerredz/vidbyte-memory/blob/main/PRIVACY.md"
       },
       "onboardingSkill": "install-memory"
     }

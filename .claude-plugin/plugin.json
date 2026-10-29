@@ -26,5 +26,9 @@
     "./.claude/agents/feedback-test.md",
     "./.claude/agents/feedback-update.md",
     "./.claude/agents/verifier.md"
-  ]
+  ],
+  "icon": "./.claude-plugin/icon.png",
+  "documentationUrl": "https://github.com/cerredz/vidbyte-memory/blob/main/docs/hosts/claude-code.md",
+  "supportUrl": "https://github.com/cerredz/vidbyte-memory/issues",
+  "privacyPolicyUrl": "https://github.com/cerredz/vidbyte-memory/blob/main/PRIVACY.md"
 }
