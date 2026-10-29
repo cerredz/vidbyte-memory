@@ -18,7 +18,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-latest
+          # ubuntu-latest moved to 26.04, which has no Python 3.9 build; 24.04 keeps the oldest supported Python covered.
+          - os: ubuntu-24.04
             python-version: "3.9"
           - os: ubuntu-latest
             python-version: "3.13"
