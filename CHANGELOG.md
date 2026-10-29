@@ -26,6 +26,7 @@ Install the memory into any existing repo, from inside the coding agents people 
 
 ### Fixed
 
+- `scripts/footprint.py --write` and `--commit` crashed on Python 3.9, the oldest version the README supports, because `Path.write_text(newline=...)` needs Python 3.10. They now write through `open()`. Found by the 3.9 CI job once a test ran the footprint writer. Task repos made from v0.1.0: copy `scripts/footprint.py`.
 - Five files had frontmatter values that YAML cannot parse, because an unquoted value contained `": "`. Skill and agent loaders parse frontmatter as YAML and skip such a file without a warning, so the `skills` CLI found only 4 of the 6 skills and missed `handle-feedback`, the protocol's entry point. The values are now quoted, and `test_frontmatter_values_parse_as_yaml` fails on any unquoted value YAML would reject. Found while preparing agent-marketplace listings requested by @cerredz. Task repos made from v0.1.0: copy `skills/handle-feedback/SKILL.md`, `skills/update-memory/SKILL.md`, `.claude/agents/verifier.md`, `tests/helpers.py` and `tests/test_memory_integrity.py`, and quote the `description` lines of `memory/pointers.md` and `memory/progress.md` and the `write` line of `memory/progress.md`.
 
 ## [0.1.0] - 2026-10-28

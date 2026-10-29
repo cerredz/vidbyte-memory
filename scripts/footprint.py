@@ -181,7 +181,8 @@ def head_footprint() -> dict:
 
 def write() -> dict:
     data = scan()
-    FOOTPRINT.write_text(render(data), encoding="utf-8", newline="\n")
+    with FOOTPRINT.open("w", encoding="utf-8", newline="\n") as out:  # write_text(newline=) needs Python 3.10
+        out.write(render(data))
     return data
 
 
@@ -190,7 +191,8 @@ def append_run_log(title: str, change: str) -> None:
     src = RUN_LOG.read_text(encoding="utf-8")
     if not src.endswith("\n"):
         src += "\n"
-    RUN_LOG.write_text(src + line, encoding="utf-8", newline="\n")
+    with RUN_LOG.open("w", encoding="utf-8", newline="\n") as out:
+        out.write(src + line)
 
 
 def commit_message(change: str, title: str, marker: str = TEMPLATE_MARKER) -> list[str]:

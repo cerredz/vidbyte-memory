@@ -73,7 +73,8 @@ class Plan:
             if not backup.exists():
                 shutil.copy2(path, backup)
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(text, encoding="utf-8", newline="\n")
+        with path.open("w", encoding="utf-8", newline="\n") as out:  # write_text(newline=) needs Python 3.10
+            out.write(text)
 
     def copy(self, src: Path, dst: Path) -> None:
         if dst.exists():
