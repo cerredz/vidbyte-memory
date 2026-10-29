@@ -1,6 +1,6 @@
 ---
 name: verifier
-description: Runs one verification agent from verifiers/ against artifacts and returns PASS or FAIL with quoted locations. Launch from skills/verify-generation with the verifier file path and the artifact paths. Read-only: Bash is for commands that inspect an artifact, never change it.
+description: 'Runs one verification agent from verifiers/ against artifacts and returns PASS or FAIL with quoted locations. Launch from skills/verify-generation with the verifier file path and the artifact paths. Read-only: Bash is for commands that inspect an artifact, never change it.'
 tools: Read, Grep, Glob, Bash
 ---
 

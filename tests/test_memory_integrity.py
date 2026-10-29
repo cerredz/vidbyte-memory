@@ -4,9 +4,9 @@ These tests are the deterministic half of the memory system. They fail when an e
 format, when an index drifts from its folder, when a fact is not 4 to 5 sentences, when a rule names no
 check, when a supersession points nowhere, when feedback is left pending or its disposition names nothing
 real, when the footprint is stale, when a secret or a relative date enters memory, when a document names a
-path that does not exist, when a skill or prompt loses one of its seven sections, or when a footprint commit
-message stops carrying its delta, title and Memory-Template trailer. Source of truth for the format:
-memory/MAP.md.
+path that does not exist, when a skill or prompt loses one of its seven sections, when a frontmatter value
+would not parse as YAML, or when a footprint commit message stops carrying its delta, title and
+Memory-Template trailer. Source of truth for the format: memory/MAP.md.
 """
 
 from __future__ import annotations
@@ -101,6 +101,25 @@ def test_memory_and_fact_files_have_frontmatter():
         if not fm.get("title") or not fm.get("description"):
             missing.append(name)
     assert not missing, f"files without title/description frontmatter: {missing}"
+
+
+def test_frontmatter_values_parse_as_yaml():
+    # Skill and agent loaders (Claude Code, Codex, the skills CLI) parse frontmatter as real YAML and silently
+    # skip a file that fails, so one unquoted ": " hides a skill from every harness.
+    bad = []
+    for path in h.files("**/*.md"):
+        src = path.read_text(encoding="utf-8").replace("\r\n", "\n")
+        end = src.find("\n---", 4)
+        if not src.startswith("---\n") or end == -1:
+            continue
+        for line in src[4:end].splitlines():
+            key, sep, value = line.partition(":")
+            value = value.strip()
+            if not sep or not value or value[0] in "'\"|>[{":
+                continue
+            if ": " in value or value.endswith(":") or " #" in value:
+                bad.append(f"{h.rel(path)} ({key.strip()})")
+    assert not bad, f"unquoted frontmatter values that YAML cannot parse; wrap each in single quotes: {bad}"
 
 
 def test_agents_index_covers_every_memory_file():

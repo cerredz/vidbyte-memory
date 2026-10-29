@@ -1,6 +1,6 @@
 ---
 title: Pointers
-description: Where things live outside this repo: dashboards, trackers, documents, services. Load when the request needs an external system.
+description: 'Where things live outside this repo: dashboards, trackers, documents, services. Load when the request needs an external system.'
 write: Any run that learns where something lives, through skills/update-memory. A pointer holds a location, never a credential.
 ---
 

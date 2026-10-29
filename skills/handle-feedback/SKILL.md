@@ -1,6 +1,6 @@
 ---
 name: handle-feedback
-description: Use when any human feedback arrives: a correction, a rejection, a strong confirmation, "remember this", or "collect facts about X". Logs the feedback verbatim, runs the three feedback subagents, stitches their results, regenerates the artifact, and runs the tests.
+description: 'Use when any human feedback arrives: a correction, a rejection, a strong confirmation, "remember this", or "collect facts about X". Logs the feedback verbatim, runs the three feedback subagents, stitches their results, regenerates the artifact, and runs the tests.'
 ---
 
 # Handle feedback

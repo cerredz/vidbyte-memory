@@ -1,6 +1,6 @@
 ---
 name: update-memory
-description: Use when an existing memory entry must be superseded, retired, merged or confirmed, or when a run produced a failure, decision, open question, scope boundary, glossary term, pointer or workflow. Keeps history: nothing is deleted.
+description: 'Use when an existing memory entry must be superseded, retired, merged or confirmed, or when a run produced a failure, decision, open question, scope boundary, glossary term, pointer or workflow. Keeps history: nothing is deleted.'
 ---
 
 # Update memory
