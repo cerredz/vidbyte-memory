@@ -6,6 +6,15 @@ Task repos made from the template do not update themselves. When a change matter
 
 ## [Unreleased]
 
+### Added
+
+- `.codex-plugin/plugin.json`, Codex's own plugin manifest, with the full listing metadata (long description, icon, screenshots, privacy and license links) and a `.codexignore`. Codex reads it before the root `plugin.json`; the HOL plugin scanner (`plugin-scanner` 3.58.0) now scores the repo 100/100 with no findings, which the awesome-codex-plugins catalog requires. Requested by @cerredz.
+
+### Changed
+
+- GitHub Actions are pinned to commit SHAs, with the version in a comment; Dependabot keeps them current.
+- The `install-memory` skill no longer pipes `curl` into Python when it runs outside the plugin: it clones the template into a temporary folder and runs `scripts/install.py` from there, so the owner can read the script first. The README one-liner for people is unchanged. Existing task repos: copy `skills/install-memory/SKILL.md` and run `python scripts/sync_skills.py`.
+
 ## [0.2.0] - 2026-10-30
 
 Install the memory into any existing repo, from inside the coding agents people already use. Requested by @cerredz.

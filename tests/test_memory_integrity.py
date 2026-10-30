@@ -562,7 +562,9 @@ def test_plugin_manifests_agree():
     assert claude["name"] == agent_plugins["name"] == gemini["name"] == "vidbyte-memory"
     hermes = re.search(r'(?m)^version: "([^"]+)"$', h.text("integrations/hermes/plugin.yaml"))
     opencode = json.loads(h.text("integrations/opencode/package.json"))
-    assert claude["version"] == agent_plugins["version"] == gemini["version"] == (hermes and hermes.group(1)) == opencode["version"]
+    codex = json.loads(h.text(".codex-plugin/plugin.json"))
+    assert codex["name"] == "vidbyte-memory"
+    assert claude["version"] == agent_plugins["version"] == gemini["version"] == (hermes and hermes.group(1)) == opencode["version"] == codex["version"]
     allowed = {"$schema", "name", "version", "description", "author", "homepage", "repository", "license", "keywords", "extensions"}
     assert set(agent_plugins) <= allowed, f"Agent Plugins 1.0 allows only these top-level fields: {sorted(allowed)}"
     missing = [agent for agent in claude.get("agents", []) if not (h.ROOT / agent).is_file()]
