@@ -59,6 +59,8 @@ AGENTS = {
     "copilot": {"markers": [".github/copilot-instructions.md", ".github/agents", ".github/skills", ".github/hooks"], "home": [".copilot"], "bins": ["copilot"]},
     "gemini": {"markers": [".gemini", "GEMINI.md"], "home": [".gemini"], "bins": ["gemini"]},
     "antigravity": {"markers": [".agents/hooks.json", ".agents/rules", ".agent"], "home": [".gemini/antigravity"], "bins": ["agy"]},
+    "opencode": {"markers": [".opencode", "opencode.json", "opencode.jsonc"], "home": [".config/opencode"], "bins": ["opencode"]},
+    "kilo": {"markers": [".kilo", ".kilocode", "kilo.json", "kilo.jsonc"], "home": [".config/kilo"], "bins": ["kilo", "kilocode"]},
     "pi": {"markers": [".pi"], "home": [".pi"], "bins": ["pi"]},
     "hermes": {"markers": [".hermes", ".hermes.md"], "home": [".hermes"], "bins": ["hermes"]},
     "kiro": {"markers": [".kiro"], "home": [".kiro"], "bins": ["kiro", "kiro-cli"]},
@@ -255,6 +257,11 @@ def wire_agent(plan: Plan, name: str, source: Path) -> None:
             data["vidbyte-memory"] = {"Stop": [{"type": "command", "command": GUARD + " --format antigravity", "timeout": 180}]}
             return True
         merge_json(plan, t / ".agents" / "hooks.json", update, "add Stop hook")
+    elif name in ("opencode", "kilo"):
+        # OpenCode and Kilo have no blocking hook; this plugin re-prompts the session when the guard blocks.
+        # Kilo is an OpenCode fork that does not read .opencode/, so each gets its own copy.
+        folder = ".opencode" if name == "opencode" else ".kilo"
+        plan.copy(source / "integrations" / "opencode" / "index.js", t / folder / "plugins" / "vidbyte-memory.js")
     elif name == "pi":
         # Pi has no command hooks; this extension runs the guard on agent_before_settle (Pi 0.87.0 or later).
         plan.copy(source / "integrations" / "pi" / "vidbyte-memory.js", t / ".pi" / "extensions" / "vidbyte-memory.js")

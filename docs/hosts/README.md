@@ -20,10 +20,10 @@ curl -fsSL https://raw.githubusercontent.com/cerredz/vidbyte-memory/main/scripts
 | [Grok Build](grok-build.md) | Enforced | Per the docs |
 | [Factory Droid](factory-droid.md) | Enforceable, wired by hand | Per the docs |
 | [Qwen Code](qwen-code.md) | Enforceable, wired by hand | Per the docs |
-| [OpenCode](opencode.md) | Advisory | Per the docs |
-| [Kilo Code](kilo-code.md) | Advisory | Per the docs |
-| [Pi](pi.md) | Advisory | Per the docs |
-| [Hermes Agent](hermes.md) | Enforceable, wired by hand | Per the docs |
+| [OpenCode](opencode.md) | Enforced (plugin) | Tested with a fake host |
+| [Kilo Code](kilo-code.md) | Enforced (plugin) | Tested with a fake host |
+| [Pi](pi.md) | Enforced (extension) | Tested with a fake host |
+| [Hermes Agent](hermes.md) | Enforced on turns that edit files (plugin) | Tested with a fake host |
 | [OpenClaw](openclaw.md) | Advisory | Per the docs |
 | [Goose](goose.md) | Enforceable, wired by hand | Per the docs |
 | [Cline](cline.md) | Advisory | Per the docs |
@@ -35,6 +35,6 @@ curl -fsSL https://raw.githubusercontent.com/cerredz/vidbyte-memory/main/scripts
 | [Crush](crush.md) | Advisory | Per the docs |
 | [Augment / Auggie](augment.md) | Advisory | Per the docs |
 
-"Tested" means the plugin was installed or validated with that agent's own CLI on 2026-10-29. "Per the docs" means the setup follows the vendor's documentation and has not been run end to end yet. Ran it somewhere? [Tell us](https://github.com/cerredz/vidbyte-memory/discussions) so the page can say "tested".
+"Tested" means the plugin was installed or validated with that agent's own CLI on 2026-10-29. "Tested with a fake host" means the plugin in [`integrations/`](../../integrations/) was loaded the way that agent loads it and driven against the real guard by template CI, but not yet run in a live session. "Per the docs" means the setup follows the vendor's documentation and has not been run end to end yet. Ran it somewhere? [Tell us](https://github.com/cerredz/vidbyte-memory/discussions) so the page can say "tested".
 
 Continue and Roo Code are not listed: Continue is read-only after its final 2.0.0 release, and Roo Code was archived on 2026-05-15.

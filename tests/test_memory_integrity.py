@@ -486,7 +486,7 @@ def test_installer_scaffolds_memory_and_wires_agents(tmp_path, capsys):
     (tmp_path / "memory").mkdir()
     (tmp_path / "memory" / "hints.md").write_text("the owner's own hints\n", encoding="utf-8")
 
-    assert install.main(["--target", str(tmp_path), "--agents", "codex,copilot,gemini,antigravity,pi"]) == 0
+    assert install.main(["--target", str(tmp_path), "--agents", "codex,copilot,gemini,antigravity,opencode,kilo,pi"]) == 0
     agents_md = (tmp_path / "AGENTS.md").read_text(encoding="utf-8")
     assert "## Memory index" in agents_md and "### Build" in agents_md and "Run `make` before committing." in agents_md
     assert "@AGENTS.md" in (tmp_path / "CLAUDE.md").read_text(encoding="utf-8")
@@ -503,10 +503,13 @@ def test_installer_scaffolds_memory_and_wires_agents(tmp_path, capsys):
     antigravity = json.loads((tmp_path / ".agents" / "hooks.json").read_text(encoding="utf-8"))
     assert antigravity["vidbyte-memory"]["Stop"][0]["command"].endswith("--format antigravity")
     assert (tmp_path / ".pi" / "extensions" / "vidbyte-memory.js").read_bytes() == (h.ROOT / "integrations" / "pi" / "vidbyte-memory.js").read_bytes()
+    opencode_plugin = (h.ROOT / "integrations" / "opencode" / "index.js").read_bytes()
+    assert (tmp_path / ".opencode" / "plugins" / "vidbyte-memory.js").read_bytes() == opencode_plugin
+    assert (tmp_path / ".kilo" / "plugins" / "vidbyte-memory.js").read_bytes() == opencode_plugin
     assert json.loads((tmp_path / ".vidbyte-memory" / "install.json").read_text(encoding="utf-8"))["actions"]
 
     capsys.readouterr()
-    assert install.main(["--target", str(tmp_path), "--agents", "codex,copilot,gemini,antigravity,pi"]) == 0
+    assert install.main(["--target", str(tmp_path), "--agents", "codex,copilot,gemini,antigravity,opencode,kilo,pi"]) == 0
     assert "wrote 0 files" in capsys.readouterr().out, "a second install must change nothing"
 
 
@@ -558,7 +561,8 @@ def test_plugin_manifests_agree():
     gemini = json.loads(h.text("gemini-extension.json"))
     assert claude["name"] == agent_plugins["name"] == gemini["name"] == "vidbyte-memory"
     hermes = re.search(r'(?m)^version: "([^"]+)"$', h.text("integrations/hermes/plugin.yaml"))
-    assert claude["version"] == agent_plugins["version"] == gemini["version"] == (hermes and hermes.group(1))
+    opencode = json.loads(h.text("integrations/opencode/package.json"))
+    assert claude["version"] == agent_plugins["version"] == gemini["version"] == (hermes and hermes.group(1)) == opencode["version"]
     allowed = {"$schema", "name", "version", "description", "author", "homepage", "repository", "license", "keywords", "extensions"}
     assert set(agent_plugins) <= allowed, f"Agent Plugins 1.0 allows only these top-level fields: {sorted(allowed)}"
     missing = [agent for agent in claude.get("agents", []) if not (h.ROOT / agent).is_file()]
