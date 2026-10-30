@@ -44,7 +44,10 @@ def frontmatter(src: str) -> dict[str, str]:
     for line in src[4:end].splitlines():
         if ":" in line:
             key, value = line.split(":", 1)
-            out[key.strip()] = value.strip()
+            value = value.strip()
+            if len(value) >= 2 and value[0] == value[-1] and value[0] in "'\"":
+                value = value[1:-1].replace("''", "'") if value[0] == "'" else value[1:-1]
+            out[key.strip()] = value
     return out
 
 

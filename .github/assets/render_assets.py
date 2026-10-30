@@ -1,4 +1,4 @@
-"""Render the README demo GIF and the GitHub social preview image.
+"""Render the README demo GIF, the GitHub social preview image and the plugin icon.
 
 Maintainer-only: needs Pillow (`pip install pillow`); the template itself never imports this file.
 Usage: python .github/assets/render_assets.py      writes demo.gif and social-preview.png next to this file
@@ -175,7 +175,24 @@ def demo_gif(path: Path, steps: list[tuple[str, str]]) -> None:
     frames[0].save(path, save_all=True, append_images=frames[1:], duration=durations, loop=0, optimize=True, disposal=1)
 
 
+def icon(path: Path) -> None:
+    """The square plugin icon that marketplaces show beside the listing (512 to 2048 px, PNG)."""
+    size = 1024
+    img = Image.new("RGB", (size, size), BG)
+    d = ImageDraw.Draw(img)
+    d.rounded_rectangle([64, 64, size - 64, size - 64], radius=120, fill=PANEL, outline=BORDER, width=8)
+    d.rectangle([64 + 120, 64, size - 64 - 120, 88], fill=GREEN)
+    mark = font(SANS_BOLD, 420)
+    left, top, right, bottom = d.textbbox((0, 0), "vm", font=mark)
+    d.text(((size - (right - left)) / 2 - left, 350 - top), "vm", font=mark, fill=TEXT)
+    d.rounded_rectangle([300, 740, 724, 780], radius=20, fill=GREEN)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    img.save(path, optimize=True)
+
+
 def main() -> int:
+    icon(HERE.parents[1] / ".claude-plugin" / "icon.png")
+    print("wrote .claude-plugin/icon.png")
     social_preview(HERE / "social-preview.png")
     print("wrote social-preview.png")
     if DEMO:

@@ -4,17 +4,20 @@ These tests are the deterministic half of the memory system. They fail when an e
 format, when an index drifts from its folder, when a fact is not 4 to 5 sentences, when a rule names no
 check, when a supersession points nowhere, when feedback is left pending or its disposition names nothing
 real, when the footprint is stale, when a secret or a relative date enters memory, when a document names a
-path that does not exist, when a skill or prompt loses one of its seven sections, or when a footprint commit
-message stops carrying its delta, title and Memory-Template trailer. Source of truth for the format:
-memory/MAP.md.
+path that does not exist, when a skill or prompt loses one of its seven sections, when a frontmatter value
+would not parse as YAML, or when a footprint commit message stops carrying its delta, title and
+Memory-Template trailer. Source of truth for the format: memory/MAP.md.
 """
 
 from __future__ import annotations
 
 import importlib.util
+import json
+import os
 import re
 import shutil
 import subprocess
+import sys
 
 import pytest
 
@@ -101,6 +104,25 @@ def test_memory_and_fact_files_have_frontmatter():
         if not fm.get("title") or not fm.get("description"):
             missing.append(name)
     assert not missing, f"files without title/description frontmatter: {missing}"
+
+
+def test_frontmatter_values_parse_as_yaml():
+    # Skill and agent loaders (Claude Code, Codex, the skills CLI) parse frontmatter as real YAML and silently
+    # skip a file that fails, so one unquoted ": " hides a skill from every harness.
+    bad = []
+    for path in h.files("**/*.md"):
+        src = path.read_text(encoding="utf-8").replace("\r\n", "\n")
+        end = src.find("\n---", 4)
+        if not src.startswith("---\n") or end == -1:
+            continue
+        for line in src[4:end].splitlines():
+            key, sep, value = line.partition(":")
+            value = value.strip()
+            if not sep or not value or value[0] in "'\"|>[{":
+                continue
+            if ": " in value or value.endswith(":") or " #" in value:
+                bad.append(f"{h.rel(path)} ({key.strip()})")
+    assert not bad, f"unquoted frontmatter values that YAML cannot parse; wrap each in single quotes: {bad}"
 
 
 def test_agents_index_covers_every_memory_file():
@@ -293,10 +315,9 @@ def test_agents_md_is_under_200_lines():
 def test_feedback_tests_name_their_feedback():
     log_ids = {e.id for e in h.entries(h.text("memory/feedback-log.md"), "memory/feedback-log.md")}
     problems = []
-    for path in h.files("tests/test_*.py"):
+    # Only tests/test_fb*.py files are feedback tests; a repo's own tests can live beside them in tests/.
+    for path in h.files("tests/test_fb*.py"):
         name = h.rel(path)
-        if name == "tests/test_memory_integrity.py":
-            continue
         match = FEEDBACK_TEST_RE.match(name)
         if not match:
             problems.append(f"{name}: feedback tests are named tests/test_fb<nnn>_<slug>.py")
@@ -407,3 +428,89 @@ def test_template_marker_parses_as_a_git_trailer():
     message = "\n\n".join(footprint.commit_message("+3 tests", "request")) + "\n"
     result = subprocess.run(["git", "interpret-trailers", "--parse"], input=message, text=True, capture_output=True, check=True)
     assert result.stdout.strip() == footprint.TEMPLATE_MARKER
+
+
+def _script_module(name: str):
+    path = h.ROOT / "scripts" / f"{name}.py"
+    if not path.is_file():
+        pytest.skip(f"scripts/{name}.py is not in this repo")
+    spec = importlib.util.spec_from_file_location(name, path)
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(module)
+    return module
+
+
+def _is_published_template() -> bool:
+    return (h.ROOT / ".claude-plugin" / "plugin.json").is_file()
+
+
+def test_skill_mirrors_match_skills():
+    # Agents load project skills from .agents/skills and .claude/skills, never from skills/, so a stale mirror
+    # means they run an old version of a skill.
+    problems = _script_module("sync_skills").differences()
+    assert not problems, "run `python scripts/sync_skills.py`:\n" + "\n".join(problems)
+
+
+def test_guard_does_nothing_outside_a_memory_repo(tmp_path):
+    env = {**os.environ, "CLAUDE_PROJECT_DIR": str(tmp_path)}
+    result = subprocess.run([sys.executable, str(h.ROOT / "scripts" / "guard.py")], input="{}", text=True, capture_output=True, env=env)
+    assert (result.returncode, result.stdout, result.stderr) == (0, "", "")
+
+
+@pytest.mark.parametrize("fmt,decision", [("claude", "block"), ("gemini", "deny"), ("antigravity", "continue")])
+def test_guard_speaks_each_hook_protocol(fmt, decision, capsys):
+    assert _script_module("guard").block(fmt, "tests fail") == 0
+    assert json.loads(capsys.readouterr().out) == {"decision": decision, "reason": "tests fail"}
+
+
+def test_guard_exit2_protocol_writes_the_reason_to_stderr(capsys):
+    assert _script_module("guard").block("exit2", "tests fail") == 2
+    out = capsys.readouterr()
+    assert (out.out, out.err.strip()) == ("", "tests fail")
+
+
+def test_installer_scaffolds_memory_and_wires_agents(tmp_path, capsys):
+    if not _is_published_template():
+        pytest.skip("the installer test runs in the published template, which is the installer's local source")
+    install = _script_module("install")
+    (tmp_path / "AGENTS.md").write_text("# Build\n\nRun `make` before committing.\n", encoding="utf-8")
+    (tmp_path / "CLAUDE.md").write_text("Prefer small diffs.\n", encoding="utf-8")
+    (tmp_path / "memory").mkdir()
+    (tmp_path / "memory" / "hints.md").write_text("the owner's own hints\n", encoding="utf-8")
+
+    assert install.main(["--target", str(tmp_path), "--agents", "codex,copilot,gemini,antigravity"]) == 0
+    agents_md = (tmp_path / "AGENTS.md").read_text(encoding="utf-8")
+    assert "## Memory index" in agents_md and "### Build" in agents_md and "Run `make` before committing." in agents_md
+    assert "@AGENTS.md" in (tmp_path / "CLAUDE.md").read_text(encoding="utf-8")
+    assert (tmp_path / "CLAUDE.md.vidbyte-memory-backup").read_text(encoding="utf-8") == "Prefer small diffs.\n"
+    assert (tmp_path / "memory" / "hints.md").read_text(encoding="utf-8") == "the owner's own hints\n"
+    assert (tmp_path / "memory" / "MAP.md").is_file() and (tmp_path / ".agents" / "skills" / "handle-feedback" / "SKILL.md").is_file()
+    assert "scripts/guard.py" in (tmp_path / ".claude" / "settings.json").read_text(encoding="utf-8")
+    codex = json.loads((tmp_path / ".codex" / "hooks.json").read_text(encoding="utf-8"))
+    assert codex["hooks"]["Stop"][0]["hooks"][0]["command"] == "python scripts/guard.py"
+    copilot = json.loads((tmp_path / ".github" / "hooks" / "vidbyte-memory.json").read_text(encoding="utf-8"))
+    assert copilot["hooks"]["agentStop"][0]["powershell"] == "python scripts/guard.py"
+    gemini = json.loads((tmp_path / ".gemini" / "settings.json").read_text(encoding="utf-8"))
+    assert gemini["hooks"]["AfterAgent"][0]["hooks"][0]["command"].endswith("--format gemini")
+    antigravity = json.loads((tmp_path / ".agents" / "hooks.json").read_text(encoding="utf-8"))
+    assert antigravity["vidbyte-memory"]["Stop"][0]["command"].endswith("--format antigravity")
+    assert json.loads((tmp_path / ".vidbyte-memory" / "install.json").read_text(encoding="utf-8"))["actions"]
+
+    capsys.readouterr()
+    assert install.main(["--target", str(tmp_path), "--agents", "codex,copilot,gemini,antigravity"]) == 0
+    assert "wrote 0 files" in capsys.readouterr().out, "a second install must change nothing"
+
+
+def test_plugin_manifests_agree():
+    if not _is_published_template():
+        pytest.skip("plugin manifests ship only with the published template")
+    claude = json.loads(h.text(".claude-plugin/plugin.json"))
+    agent_plugins = json.loads(h.text("plugin.json"))
+    gemini = json.loads(h.text("gemini-extension.json"))
+    assert claude["name"] == agent_plugins["name"] == gemini["name"] == "vidbyte-memory"
+    assert claude["version"] == agent_plugins["version"] == gemini["version"]
+    allowed = {"$schema", "name", "version", "description", "author", "homepage", "repository", "license", "keywords", "extensions"}
+    assert set(agent_plugins) <= allowed, f"Agent Plugins 1.0 allows only these top-level fields: {sorted(allowed)}"
+    missing = [agent for agent in claude.get("agents", []) if not (h.ROOT / agent).is_file()]
+    assert not missing, f".claude-plugin/plugin.json names agents that do not exist: {missing}"

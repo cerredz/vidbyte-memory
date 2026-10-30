@@ -12,8 +12,8 @@ authors:
     website: "https://vidbyte.pro"
 repository-code: "https://github.com/cerredz/vidbyte-memory"
 license: MIT
-version: 0.1.0
-date-released: "2026-10-28"
+version: 0.2.0
+date-released: "2026-10-29"
 keywords:
   - agent memory
   - coding agents
