@@ -4,7 +4,13 @@ vidbyte-memory turns each correction you give Pi into a slim fact, a test and a 
 
 ## Install
 
-Run the installer from the repo you want to give memory. When it finds Pi (a `.pi/` folder, `~/.pi` or `pi` on PATH) it writes the extension to `.pi/extensions/vidbyte-memory.js`. Add `--agents pi` to wire it explicitly.
+**As a Pi package**, once per machine. It adds the extension, which does nothing in repos without `memory/MAP.md`, and the `install-memory` skill. Then ask Pi to "install vidbyte-memory in this repo":
+
+```bash
+pi install git:github.com/cerredz/vidbyte-memory@v0.3.0
+```
+
+**Or per repo.** Run the installer from the repo you want to give memory. When it finds Pi (a `.pi/` folder, `~/.pi` or `pi` on PATH) it writes the extension to `.pi/extensions/vidbyte-memory.js`. Add `--agents pi` to wire it explicitly.
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/cerredz/vidbyte-memory/main/scripts/install.py | python3 -
@@ -24,6 +30,7 @@ Pi has no Stop hook, but since 0.87.0 it fires `agent_before_settle` before a ru
 
 - Aborted and failed runs are not gated, and neither are JSON-mode child runs (subagents).
 - It looks for Python 3 as `py -3`, `python`, then `python3` on Windows, and `python3`, then `python` elsewhere; set `VIDBYTE_MEMORY_PYTHON` to choose one.
+- With both the Pi package and the project file loaded, the guard still runs once per settle: the second copy sees the first one's message and stands down.
 - If you also run a bridge that executes `.claude/settings.json` Stop hooks inside Pi, the guard runs twice per settle; keep one of the two.
 
 ## Status

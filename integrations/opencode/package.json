@@ -1,14 +1,16 @@
 {
   "name": "opencode-vidbyte-memory",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Turn-end gate for vidbyte-memory repos in OpenCode and Kilo: re-prompts the session until tests pass, feedback is handled and work is pushed.",
   "type": "module",
   "main": "./index.js",
   "exports": { ".": "./index.js", "./server": "./index.js" },
-  "files": ["index.js", "README.md"],
+  "files": ["index.js", "README.md", "LICENSE"],
   "keywords": ["opencode", "opencode-plugin", "kilo", "kilocode", "kilo-plugin", "agent-memory", "stop-hook", "coding-agent", "vidbyte-memory"],
   "repository": { "type": "git", "url": "git+https://github.com/cerredz/vidbyte-memory.git", "directory": "integrations/opencode" },
   "homepage": "https://github.com/cerredz/vidbyte-memory/blob/main/docs/hosts/opencode.md",
+  "bugs": "https://github.com/cerredz/vidbyte-memory/issues",
+  "author": "cerredz (https://github.com/cerredz)",
   "license": "MIT",
   "scripts": { "test": "node --test test/" }
 }

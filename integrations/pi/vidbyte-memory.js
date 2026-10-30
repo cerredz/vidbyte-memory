@@ -8,8 +8,11 @@
  * file adds its own cap per settle so the loop always ends.
  *
  * Loads in Pi >= 0.87.0 (the release that added agent_before_settle) from:
- *   - npm:  pi install npm:pi-vidbyte-memory
+ *   - the vidbyte-memory Pi package: pi install git:github.com/cerredz/vidbyte-memory@v0.3.0
+ *     (or npm:vidbyte-memory), which also brings the install-memory skill
  *   - a project file: <project>/.pi/extensions/vidbyte-memory.js (needs project trust)
+ * When both load, the second copy sees the first one's message in the boundary entries and stands down,
+ * so the guard runs once per settle.
  * Plain ESM JavaScript on purpose: Pi loads it through jiti, and Node can import it directly in tests.
  * No imports beyond Node built-ins. It never throws: any failure means "do not block".
  */
@@ -156,6 +159,8 @@ export default function vidbyteMemory(pi) {
 			if (!event || event.outcome !== "completed") return undefined; // errors and aborts end the run
 			if (ctx?.mode === "json") return undefined; // JSON-mode children (subagents) are not gated
 			if (process.env.VIDBYTE_MEMORY_GUARD === "off") return undefined;
+			const prior = Array.isArray(event.entries) ? event.entries : [];
+			if (prior.some((entry) => entry?.customType === MESSAGE_TYPE)) return undefined; // another copy already gated
 			if (continuesThisSettle >= MAX_CONTINUES_PER_SETTLE) return undefined;
 
 			const cwd = typeof ctx?.cwd === "string" && ctx.cwd ? ctx.cwd : process.cwd();
@@ -193,7 +198,6 @@ export default function vidbyteMemory(pi) {
 			if (!decision.block) return undefined;
 
 			continuesThisSettle += 1;
-			const prior = Array.isArray(event.entries) ? event.entries : [];
 			return {
 				entries: [
 					...prior,

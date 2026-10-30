@@ -63,6 +63,7 @@ On Windows PowerShell: `irm https://raw.githubusercontent.com/cerredz/vidbyte-me
 | Codex | `codex plugin marketplace add cerredz/vidbyte-memory`, then `codex plugin add vidbyte-memory@vidbyte` |
 | Gemini CLI | `gemini extensions install https://github.com/cerredz/vidbyte-memory` |
 | Antigravity | `agy plugin install https://github.com/cerredz/vidbyte-memory` |
+| Pi | `pi install git:github.com/cerredz/vidbyte-memory@v0.3.0` |
 | Factory Droid, Grok Build, Qwen Code, Junie, Auggie | add `cerredz/vidbyte-memory` as a plugin marketplace |
 | Any of 78 agents (skills only) | `npx skills add cerredz/vidbyte-memory` |
 
@@ -78,7 +79,7 @@ Every agent and what it enforces: [docs/hosts](docs/hosts/README.md).
 
    ```bash
    git rm -r -q CHANGELOG.md CITATION.cff SECURITY.md llms.txt context7.json .devin docs .github/assets \
-     .claude-plugin plugin.json hooks gemini-extension.json gemini-extension.md .agents/plugins \
+     .claude-plugin plugin.json hooks gemini-extension.json gemini-extension.md .agents/plugins package.json package-lock.json bin \
      .github/CONTRIBUTING.md .github/CODE_OF_CONDUCT.md .github/ISSUE_TEMPLATE \
      .github/PULL_REQUEST_TEMPLATE.md .github/release.yml .github/dependabot.yml .github/workflows/template-ci.yml
    git commit -m "Remove the template's own project files"

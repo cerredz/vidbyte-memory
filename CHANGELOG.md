@@ -6,6 +6,24 @@ Task repos made from the template do not update themselves. When a change matter
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-30
+
+Install from npm and as a Pi package. Requested by @cerredz.
+
+### Added
+
+- **The npm package `vidbyte-memory`** (the root `package.json`). `npx vidbyte-memory init` runs `scripts/install.py` from the package's own copy of the template, so it works offline and installs the same release as the package; `uninstall` and every installer option pass through. It looks for Python 3.9+ the way the agent plugins do (`VIDBYTE_MEMORY_PYTHON`, then `py -3`, `python`, `python3` on Windows). It works once the package is published to npm.
+- **A Pi package** in the same `package.json`: `pi install git:github.com/cerredz/vidbyte-memory@v0.3.0` loads the turn-end extension for every repo and the `install-memory` skill. The `pi-package` keyword lists it in the Pi gallery once it is on npm.
+- Template CI tests the npm command end to end (install, then uninstall, from the package's files), packs both npm packages, and fails when `package.json` stops shipping a file the installer copies.
+
+### Fixed
+
+- With the Pi package and the project's `.pi/extensions/vidbyte-memory.js` both loaded, the guard ran twice per settle and spent two of its five rounds. The second copy now sees the first one's message and stands down. Existing task repos: copy `integrations/pi/vidbyte-memory.js` to `.pi/extensions/vidbyte-memory.js`.
+
+### Changed
+
+- `opencode-vidbyte-memory` ships its license file, ready for `npm publish` from `integrations/opencode`.
+
 ## [0.2.1] - 2026-10-30
 
 Listing fixes found while submitting v0.2.0 to agent marketplaces. Requested by @cerredz.
@@ -63,7 +81,8 @@ First public release. Requested by @cerredz.
 - `template-ci.yml`, which tests Python 3.9 and 3.13 on Ubuntu and 3.11 on Windows, only in this repo.
 - A live example, [cerredz/vidbyte-memory-example](https://github.com/cerredz/vidbyte-memory-example), made from the template.
 
-[Unreleased]: https://github.com/cerredz/vidbyte-memory/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/cerredz/vidbyte-memory/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/cerredz/vidbyte-memory/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/cerredz/vidbyte-memory/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/cerredz/vidbyte-memory/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/cerredz/vidbyte-memory/releases/tag/v0.1.0

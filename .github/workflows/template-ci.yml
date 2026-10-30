@@ -38,6 +38,10 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: "22"
-      - run: node --test integrations/pi/vidbyte-memory.test.mjs integrations/opencode/test/opencode-plugin.test.mjs
+      - run: node --test integrations/pi/vidbyte-memory.test.mjs integrations/opencode/test/opencode-plugin.test.mjs bin/vidbyte-memory.test.mjs
         env:
           VIDBYTE_MEMORY_PYTHON: python  # the interpreter setup-python installed pytest into, not `py -3`
+      # The npm packages must pack as published: the root one (npx vidbyte-memory, and the Pi package) and OpenCode's.
+      - run: npm pack --dry-run
+      - run: npm pack --dry-run
+        working-directory: integrations/opencode

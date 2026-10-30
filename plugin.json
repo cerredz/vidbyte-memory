@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "vidbyte-memory",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Correction-driven memory for coding agents: every correction becomes a fact, a test and a footprint commit in your repo. No API key, no database, no service.",
   "author": {
     "name": "cerredz",

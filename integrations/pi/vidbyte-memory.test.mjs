@@ -130,6 +130,18 @@ test("blocks with the guard's reason, keeps earlier drafts, gives up after the g
 	assert.equal(host.calls.length, 0, "no sendMessage/sendUserMessage: the boundary result is the channel");
 });
 
+test("two copies (the Pi package and a project file) run the guard once per settle", async () => {
+	const root = makeProject("twice", { pendingFeedback: true });
+	const host = fakePi();
+	extension(host.pi);
+	extension(host.pi);
+	const { ctx } = fakeCtx(root, { sessionId: "twice-session" });
+	const result = await host.fireBoundary("agent_before_settle", { outcome: "completed" }, ctx);
+	assert.equal(result.continue, true);
+	assert.equal(result.entries.filter((entry) => entry.customType === "vidbyte-memory-guard").length, 1);
+	assert.match(result.entries[0].content, /guard round 1 of 5/);
+});
+
 test("skips errored runs and JSON-mode children", async () => {
 	const root = makeProject("skips", { pendingFeedback: true });
 	const host = fakePi();
