@@ -11,13 +11,20 @@ Source: the template this script sits in when that is the published template (a 
 the GitHub tarball of --ref otherwise, so a task repo's own memory is never copied into another repo:
   curl -fsSL https://raw.githubusercontent.com/cerredz/vidbyte-memory/main/scripts/install.py | python3 -
 
+`uninstall` undoes an install from the manifest: it deletes the files the install created, restores the files
+it changed from their backups, and takes its hook entries out of agent settings files the owner edited since.
+Files the owner changed after the install (memory the agent wrote, a filled-in AGENTS.md) are kept and listed,
+unless --force.
+
 Usage: python scripts/install.py [--target DIR] [--ref main] [--agents codex,gemini | --all] [--dry-run]
+       python scripts/install.py uninstall [--target DIR] [--dry-run] [--force]
 Standard library only.
 """
 
 from __future__ import annotations
 
 import argparse
+import hashlib
 import io
 import json
 import os
@@ -38,6 +45,12 @@ CRITICAL = ("tests/helpers.py", "tests/test_memory_integrity.py", "scripts/guard
 GUARD = "python scripts/guard.py"
 MAX_AGENTS_LINES = 200
 BACKUP_SUFFIX = ".vidbyte-memory-backup"
+MANIFEST = ".vidbyte-memory/install.json"
+# Agent settings files the install adds a hook to; uninstall takes the hook back out even after other edits.
+HOOK_FILES = (".claude/settings.json", ".codex/hooks.json", ".gemini/settings.json", ".agents/hooks.json", ".github/hooks/vidbyte-memory.json")
+# Files the memory writes while it runs, which no install action lists.
+RUNTIME_FILES = (".claude/.guard_state.json",)
+CACHE_DIRS = ("__pycache__", ".pytest_cache")
 
 # Agents that need more than AGENTS.md, CLAUDE.md, .claude/ and the .agents/skills mirror, which every install
 # writes. markers: paths in the repo; home: folders under ~; bins: commands on PATH.
@@ -65,12 +78,15 @@ class Plan:
         return path.relative_to(self.target).as_posix()
 
     def write(self, path: Path, text: str, action: str) -> None:
-        self.actions.append({"path": self.rel(path), "action": action})
+        entry = {"path": self.rel(path), "action": action}
+        backup = backup_of(path)
+        if path.exists() and action != "create":
+            entry["backup"] = self.rel(backup)
+        self.actions.append(entry)
         if self.dry_run:
             return
         if path.exists() and action != "create":
-            backup = path.with_name(path.name + BACKUP_SUFFIX)
-            if not backup.exists():
+            if not backup.exists():  # an earlier install's backup holds the file as it was before any install
                 shutil.copy2(path, backup)
         path.parent.mkdir(parents=True, exist_ok=True)
         with path.open("w", encoding="utf-8", newline="\n") as out:  # write_text(newline=) needs Python 3.10
@@ -85,6 +101,14 @@ class Plan:
         if not self.dry_run:
             dst.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(src, dst)
+
+
+def backup_of(path: Path) -> Path:
+    return path.with_name(path.name + BACKUP_SUFFIX)
+
+
+def digest(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def is_template(folder: Path) -> bool:
@@ -257,18 +281,151 @@ def install(source: Path, plan: Plan, agents: list[str]) -> None:
         wire_agent(plan, name, source)
 
 
+def record_install(target: Path, plan: Plan, agents: dict[str, str], source: str) -> None:
+    """Add this run's writes to the manifest, with each file's hash as the install left it.
+
+    Entries from an earlier install keep their first action, backup and hash, so uninstall still knows the
+    repo as it was before any install and still sees the owner's edits made between installs.
+    """
+    manifest = target / MANIFEST
+    try:
+        old = json.loads(manifest.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        old = {}
+    entries = {entry["path"]: entry for entry in old.get("actions", [])}
+    touched = [action["path"] for action in plan.actions] + ["memory/footprint.md"]  # the installer regenerates the footprint
+    for action in plan.actions:
+        entries.setdefault(action["path"], dict(action))
+    for rel in touched:
+        if rel in entries and (target / rel).is_file():
+            entries[rel]["sha256"] = digest(target / rel)
+    record = {"template": REPO, "source": source, "agents": {**old.get("agents", {}), **agents}, "actions": list(entries.values())}
+    manifest.parent.mkdir(parents=True, exist_ok=True)
+    manifest.write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
+
+
+def strip_guard(value):
+    """(value without the hook entries that run scripts/guard.py, whether any were removed).
+
+    A container left empty by the removal is removed too (None), so the owner's own hooks and settings stay
+    exactly as they were and no empty "Stop": [] is left behind.
+    """
+    if isinstance(value, dict):
+        if any(isinstance(item, str) and "scripts/guard.py" in item for item in value.values()):
+            return None, True
+        out, removed = {}, False
+        for key, item in value.items():
+            kept, gone = (None, True) if key == "vidbyte-memory" else strip_guard(item)
+            removed = removed or gone
+            if kept is not None:
+                out[key] = kept
+        return (None if removed and not out else out), removed
+    if isinstance(value, list):
+        out, removed = [], False
+        for item in value:
+            kept, gone = strip_guard(item)
+            removed = removed or gone
+            if kept is not None:
+                out.append(kept)
+        return (None if removed and not out else out), removed
+    return value, False
+
+
+def remove_empty_folders(target: Path, folders: set[Path]) -> None:
+    """Remove the folders uninstall emptied (and their emptied parents), ignoring Python caches inside them."""
+    for folder in sorted(folders, key=lambda p: len(p.parts), reverse=True):
+        while folder != target and folder.is_dir():
+            if any(p.name not in CACHE_DIRS for p in folder.iterdir()):
+                break
+            shutil.rmtree(folder)
+            folder = folder.parent
+
+
+def uninstall(target: Path, dry_run: bool, force: bool) -> int:
+    try:
+        record = json.loads((target / MANIFEST).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        raise SystemExit(f"no readable {MANIFEST} in {target}; only an install that wrote it can be undone")
+    removed, restored, cleaned, emptied = [], [], [], set()
+    kept: dict[str, str] = {}  # path -> why it was kept
+    for entry in reversed(record.get("actions", [])):
+        rel, path = entry["path"], target / entry["path"]
+        backup = backup_of(path)
+        if not path.is_file():
+            continue
+        unchanged = entry.get("sha256") == digest(path)
+        if rel in HOOK_FILES and not unchanged and not force:
+            try:
+                data = json.loads(path.read_text(encoding="utf-8"))
+            except ValueError:
+                kept[rel] = "not valid JSON; remove the scripts/guard.py hook by hand"
+                continue
+            data, gone = strip_guard(data)
+            if gone:
+                cleaned.append(rel)
+                if not dry_run:
+                    backup.unlink(missing_ok=True)  # the cleaned file, not the backup, holds the owner's settings now
+                    if data or entry["action"] != "create":
+                        path.write_text(json.dumps(data or {}, indent=2) + "\n", encoding="utf-8")
+                    else:
+                        path.unlink()
+                        emptied.add(path.parent)
+            continue
+        if not unchanged and not force:
+            hint = f"; the file as it was before the install is {backup.name}" if backup.is_file() else ""
+            kept[rel] = f"changed since the install{hint}"
+        elif entry["action"] != "create" and backup.is_file():
+            restored.append(rel)
+            if not dry_run:
+                os.replace(backup, path)
+        elif entry["action"] == "create":
+            removed.append(rel)
+            if not dry_run:
+                path.unlink()
+                emptied.add(path.parent)
+        else:
+            kept[rel] = f"its backup {backup.name} is gone"
+    if not dry_run:
+        for rel in RUNTIME_FILES:
+            (target / rel).unlink(missing_ok=True)
+        if kept:  # a later `uninstall --force` still needs to know these files
+            still = [entry for entry in record["actions"] if entry["path"] in kept]
+            (target / MANIFEST).write_text(json.dumps({**record, "actions": still}, indent=2) + "\n", encoding="utf-8")
+        else:
+            (target / MANIFEST).unlink()
+            emptied.add((target / MANIFEST).parent)
+        remove_empty_folders(target, emptied)
+
+    verb = "would remove" if dry_run else "removed"
+    print(f"vidbyte-memory {verb} {len(removed)} files, restored {len(restored)} and took its hook out of {len(cleaned)} in {target}")
+    for rel in restored:
+        print(f"  < {rel} (restored from its backup)")
+    for rel in cleaned:
+        print(f"  - {rel} (vidbyte-memory hook removed, your settings kept)")
+    if kept:
+        print(f"kept {len(kept)} files:")
+        for rel, why in kept.items():
+            print(f"  ! {rel} ({why})")
+        print("run `uninstall --force` to remove or restore them too; git keeps every committed version.")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Install vidbyte-memory into an existing repo and wire its coding agents.")
+    parser = argparse.ArgumentParser(description="Install vidbyte-memory into an existing repo and wire its coding agents, or undo that.")
+    parser.add_argument("command", nargs="?", default="install", choices=["install", "uninstall"], help="install (default) or uninstall")
     parser.add_argument("--target", default=".", help="the repo to install into (default: the current directory)")
     parser.add_argument("--ref", default="main", help="branch or tag to download when not run from a template")
     parser.add_argument("--agents", help="comma-separated agents to wire, instead of detecting them: " + ", ".join(AGENTS))
     parser.add_argument("--all", action="store_true", help="wire every agent the installer knows")
     parser.add_argument("--dry-run", action="store_true", help="print the plan without writing anything")
+    parser.add_argument("--force", action="store_true", help="uninstall: also remove or restore files changed since the install")
     args = parser.parse_args(argv)
 
     target = Path(args.target).resolve()
     if not target.is_dir():
         raise SystemExit(f"{target} is not a folder")
+    if args.command == "uninstall":
+        return uninstall(target, args.dry_run, args.force)
     if is_template(target) and (target / ".claude-plugin").is_dir():
         raise SystemExit("this is the vidbyte-memory template itself; run the installer from the repo you want to give memory")
 
@@ -289,10 +446,7 @@ def main(argv: list[str] | None = None) -> int:
             # The footprint counts the repo's own tests too, so the template's copy is stale until regenerated.
             subprocess.run([sys.executable, "scripts/footprint.py", "--write"], cwd=target, capture_output=True, text=True)
         if not args.dry_run and plan.actions:
-            manifest = target / ".vidbyte-memory" / "install.json"
-            record = {"template": REPO, "source": "local" if source.parent != Path(tmp) else f"github:{args.ref}", "agents": agents, "actions": plan.actions}
-            manifest.parent.mkdir(parents=True, exist_ok=True)
-            manifest.write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
+            record_install(target, plan, agents, "local" if source.parent != Path(tmp) else f"github:{args.ref}")
 
     verb = "would write" if args.dry_run else "wrote"
     print(f"vidbyte-memory {verb} {len(plan.actions)} files in {target}")

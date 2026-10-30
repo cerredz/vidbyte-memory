@@ -46,4 +46,5 @@ A short report: the repo, the files written (count and the notable ones), the ag
 
 - Loaded only when the owner asks to add memory to a repo or to repair an install; it is not part of the per-request protocol.
 - The installer is idempotent: running it again creates only what is missing, so it also repairs a partial install.
+- When the owner asks to remove the memory, run `python scripts/install.py uninstall --dry-run`, show the plan, then run it without `--dry-run`. It deletes what the install created, restores edited files from their backups, takes the guard hook out of agent settings the owner edited since, and keeps memory the agent wrote unless the owner asks for `--force`.
 - Uses `scripts/install.py`, which needs Python 3.9 or later and nothing outside the standard library.

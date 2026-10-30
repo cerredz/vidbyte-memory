@@ -186,7 +186,7 @@ Footprint commits end with that git trailer. In public repos it lets the templat
 
 ### Can I add it to an existing repo?
 
-Yes. Run `scripts/install.py` from the repo (the one-line command is under Quick start). It copies the memory in without overwriting any file, folds an existing `AGENTS.md` into the new `## Task` block (or keeps a long one as `AGENTS.previous.md`), backs up every file it edits, wires the Stop hook for each agent it finds, and lists everything it wrote in `.vidbyte-memory/install.json`. Your own tests can stay in `tests/`; only `tests/test_fb*.py` files are treated as feedback tests.
+Yes. Run `scripts/install.py` from the repo (the one-line command is under Quick start). It copies the memory in without overwriting any file, folds an existing `AGENTS.md` into the new `## Task` block (or keeps a long one as `AGENTS.previous.md`), backs up every file it edits, wires the Stop hook for each agent it finds, and lists everything it wrote in `.vidbyte-memory/install.json`. Your own tests can stay in `tests/`; only `tests/test_fb*.py` files are treated as feedback tests. To take it out again, run `python scripts/install.py uninstall`: it deletes what the install created, restores the files it changed, takes its hook out of agent settings you edited since, and keeps (and lists) memory your agent wrote unless you add `--force`.
 
 ## Layout
 

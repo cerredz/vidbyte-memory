@@ -502,6 +502,46 @@ def test_installer_scaffolds_memory_and_wires_agents(tmp_path, capsys):
     assert "wrote 0 files" in capsys.readouterr().out, "a second install must change nothing"
 
 
+def _snapshot(root: Path) -> dict[str, bytes]:
+    return {p.relative_to(root).as_posix(): p.read_bytes() for p in sorted(root.rglob("*")) if p.is_file()}
+
+
+def test_uninstall_returns_the_repo_to_how_it_was(tmp_path):
+    if not _is_published_template():
+        pytest.skip("the installer test runs in the published template, which is the installer's local source")
+    install = _script_module("install")
+    (tmp_path / "AGENTS.md").write_text("# Build\n\nRun `make` before committing.\n", encoding="utf-8")
+    (tmp_path / ".gitignore").write_text("node_modules/\n", encoding="utf-8")
+    (tmp_path / ".claude").mkdir()
+    (tmp_path / ".claude" / "settings.json").write_text('{"permissions": {"allow": ["Bash(ls)"]}}\n', encoding="utf-8")
+    before = _snapshot(tmp_path)
+    assert install.main(["--target", str(tmp_path), "--agents", "codex,gemini"]) == 0
+
+    # The owner uses the memory: the agent writes a hint, the owner adds a setting and a hook of their own.
+    hints = tmp_path / "memory" / "hints.md"
+    hints.write_text(hints.read_text(encoding="utf-8") + "\n- H-001 prefer tables\n", encoding="utf-8")
+    settings = json.loads((tmp_path / ".claude" / "settings.json").read_text(encoding="utf-8"))
+    (tmp_path / ".claude" / "settings.json").write_text(json.dumps({**settings, "model": "opus"}), encoding="utf-8")
+    codex = json.loads((tmp_path / ".codex" / "hooks.json").read_text(encoding="utf-8"))
+    codex["hooks"]["Stop"].append({"hooks": [{"type": "command", "command": "make lint"}]})
+    (tmp_path / ".codex" / "hooks.json").write_text(json.dumps(codex), encoding="utf-8")
+    (tmp_path / ".claude" / ".guard_state.json").write_text("{}", encoding="utf-8")
+    (tmp_path / "scripts" / "__pycache__").mkdir()
+    (tmp_path / "scripts" / "__pycache__" / "guard.cpython-313.pyc").write_bytes(b"")
+
+    assert install.main(["uninstall", "--target", str(tmp_path)]) == 0
+    after = _snapshot(tmp_path)
+    assert after.pop("memory/hints.md") == hints.read_bytes(), "memory the owner's agent wrote is kept without --force"
+    assert json.loads(after.pop(".claude/settings.json")) == {"permissions": {"allow": ["Bash(ls)"]}, "model": "opus"}
+    assert json.loads(after.pop(".codex/hooks.json")) == {"hooks": {"Stop": [{"hooks": [{"type": "command", "command": "make lint"}]}]}}
+    manifest = json.loads(after.pop(".vidbyte-memory/install.json"))
+    assert [entry["path"] for entry in manifest["actions"]] == ["memory/hints.md"], "the manifest keeps what a --force run still needs"
+    assert after == {k: v for k, v in before.items() if k != ".claude/settings.json"}, "every other file is back as it was"
+
+    assert install.main(["uninstall", "--target", str(tmp_path), "--force"]) == 0
+    assert not (tmp_path / "memory").exists() and not (tmp_path / ".vidbyte-memory").exists()
+
+
 def test_plugin_manifests_agree():
     if not _is_published_template():
         pytest.skip("plugin manifests ship only with the published template")
