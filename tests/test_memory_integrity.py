@@ -564,6 +564,8 @@ def test_plugin_manifests_agree():
     opencode = json.loads(h.text("integrations/opencode/package.json"))
     codex = json.loads(h.text(".codex-plugin/plugin.json"))
     assert codex["name"] == "vidbyte-memory"
+    # Outside the plugin, install-memory clones its own release tag; catalogs mirror the skill and require the pin.
+    assert f"--branch v{claude['version']} " in h.text("skills/install-memory/SKILL.md"), "pin the clone in skills/install-memory to this release"
     assert claude["version"] == agent_plugins["version"] == gemini["version"] == (hermes and hermes.group(1)) == opencode["version"] == codex["version"]
     allowed = {"$schema", "name", "version", "description", "author", "homepage", "repository", "license", "keywords", "extensions"}
     assert set(agent_plugins) <= allowed, f"Agent Plugins 1.0 allows only these top-level fields: {sorted(allowed)}"

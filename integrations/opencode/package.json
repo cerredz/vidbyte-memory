@@ -1,6 +1,6 @@
 {
   "name": "opencode-vidbyte-memory",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Turn-end gate for vidbyte-memory repos in OpenCode and Kilo: re-prompts the session until tests pass, feedback is handled and work is pushed.",
   "type": "module",
   "main": "./index.js",
