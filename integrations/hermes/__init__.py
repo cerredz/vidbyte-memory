@@ -117,6 +117,11 @@ def run_guard(root: Path, session_id: str, timeout: float) -> dict:
     # guard.py reads CLAUDE_PROJECT_DIR before the payload cwd: pin it to this project, so a value
     # inherited from an outer Claude Code session cannot point the guard at another repo.
     env = dict(os.environ, CLAUDE_PROJECT_DIR=str(root))
+    # Hermes runs from its own venv, and on Windows that venv's launcher exports PYTHONHOME (its base
+    # interpreter). Inherited by the project's Python, it loads Hermes's stdlib and dies before the guard
+    # runs, so the gate would fail open. The project's interpreter finds its own home: drop the binding.
+    for name in ("PYTHONHOME", "__PYVENV_LAUNCHER__"):
+        env.pop(name, None)
     try:
         proc = subprocess.Popen(
             [project_python(root), str(root / "scripts" / "guard.py"), "--format", "claude"],

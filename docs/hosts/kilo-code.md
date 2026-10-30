@@ -24,7 +24,11 @@ When a session goes idle, the plugin runs `scripts/guard.py`. While the guard re
 
 ## Status
 
-Tested with a fake Kilo/OpenCode 1.x host against the real guard (2026-10-30); not yet run in a live Kilo session.
+Run live on 2026-10-30 in Kilo 7.8.18, against a local mock model, in a repo with a failing test and an uncommitted file. With a running server (`kilo serve` plus `kilo run --attach`, the server the TUI uses), the plugin re-prompted the session 5 times, the guard's cap, then let it end.
+
+Headless `kilo run` exits before the plugin's new prompt starts. There the guard blocks once, with no effect.
+
+Template CI also tests the plugin against a fake Kilo/OpenCode 1.x host.
 
 Vendor docs: https://kilo.ai/docs
 

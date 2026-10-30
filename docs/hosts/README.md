@@ -20,10 +20,10 @@ curl -fsSL https://raw.githubusercontent.com/cerredz/vidbyte-memory/main/scripts
 | [Grok Build](grok-build.md) | Enforced | Per the docs |
 | [Factory Droid](factory-droid.md) | Enforceable, wired by hand | Per the docs |
 | [Qwen Code](qwen-code.md) | Enforceable, wired by hand | Per the docs |
-| [OpenCode](opencode.md) | Enforced (plugin) | Tested with a fake host |
-| [Kilo Code](kilo-code.md) | Enforced (plugin) | Tested with a fake host |
-| [Pi](pi.md) | Enforced (extension) | Tested with a fake host |
-| [Hermes Agent](hermes.md) | Enforced on turns that edit files (plugin) | Tested with a fake host |
+| [OpenCode](opencode.md) | Enforced (plugin) | Run live in 1.19.5 and 2.2.4; not in 1.x headless `run` |
+| [Kilo Code](kilo-code.md) | Enforced (plugin) | Run live in 7.8.18; not in headless `kilo run` |
+| [Pi](pi.md) | Enforced (extension) | Run live in 1.4.0 |
+| [Hermes Agent](hermes.md) | Enforced on turns that edit files (plugin) | Run live in-process; CLI path not run |
 | [OpenClaw](openclaw.md) | Advisory | Per the docs |
 | [Goose](goose.md) | Enforceable, wired by hand | Per the docs |
 | [Cline](cline.md) | Advisory | Per the docs |

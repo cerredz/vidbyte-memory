@@ -35,7 +35,11 @@ Pi has no Stop hook, but since 0.87.0 it fires `agent_before_settle` before a ru
 
 ## Status
 
-Tested with a fake Pi host against the real guard (2026-10-30), and loaded through jiti the way Pi loads extensions; not yet run in a live Pi session. Needs Pi 0.87.0 or later.
+Run live on 2026-10-30 in Pi 1.4.0 (`pi -p --approve`), against a local mock model, in a repo with a failing test and an uncommitted file. The extension continued the run 5 times, the guard's cap, then let it settle. That also held with both the Pi package and the project file loaded.
+
+Without project trust, Pi does not load the project file.
+
+Template CI also tests the extension against a fake Pi host. Needs Pi 0.87.0 or later.
 
 Vendor docs: https://github.com/earendil-works/pi
 

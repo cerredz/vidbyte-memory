@@ -33,7 +33,12 @@ OpenCode has no blocking Stop hook, so the plugin does the same job another way.
 
 ## Status
 
-Tested with fake OpenCode 1.x and 2.x hosts against the real guard (2026-10-30); not yet run in a live OpenCode session.
+Run live on 2026-10-30 in OpenCode 1.19.5 and 2.2.4, against a local mock model, in a repo with a failing test and an uncommitted file. The plugin re-prompted the session 5 times, the guard's cap, then let it end.
+
+- **OpenCode 2.x:** this holds with a server and in headless `opencode run`.
+- **OpenCode 1.x:** it holds with a running server (`opencode serve` plus `opencode run --attach`, the server the TUI uses). It does not hold in headless `opencode run`, which exits at the first idle before the plugin's new prompt starts. OpenCode 1.x has no turn-end hook that a plugin can hold open.
+
+Template CI also tests the plugin against fake 1.x and 2.x hosts.
 
 Vendor docs: https://opencode.ai/docs/plugins
 

@@ -18,7 +18,14 @@ Install from npm and as a Pi package. Requested by @cerredz.
 
 ### Fixed
 
-- With the Pi package and the project's `.pi/extensions/vidbyte-memory.js` both loaded, the guard ran twice per settle and spent two of its five rounds. The second copy now sees the first one's message and stands down. Existing task repos: copy `integrations/pi/vidbyte-memory.js` to `.pi/extensions/vidbyte-memory.js`.
+- **Hermes on Windows never blocked a turn.** Hermes runs from its own venv, whose launcher exports `PYTHONHOME`. The project's Python inherited it, died at startup, and the plugin let every turn end. The plugin now drops `PYTHONHOME` before it starts the guard. Found in a live Hermes run.
+- **Pi ran the guard twice with both copies loaded.** With the Pi package and the project's `.pi/extensions/vidbyte-memory.js` both loaded, each copy ran the guard. After the guard gave up at round 5, the other copy started a second cycle of 5. Now only the copy loaded last gates the process. Existing task repos: copy `integrations/pi/vidbyte-memory.js` to `.pi/extensions/vidbyte-memory.js`.
+
+### Tested
+
+- **The turn-end plugins were run live on 2026-10-30** against a local mock model, in repos with a failing test and an uncommitted file. Each kept the session working until the guard's cap (Hermes: its own cap of 3 nudges per turn).
+  - OpenCode 1.19.5 and 2.2.4, Kilo 7.8.18, Pi 1.4.0, and Hermes from git through its in-process runner.
+  - Headless `opencode run` (1.x) and `kilo run` exit before the plugin's new prompt starts. The host pages in `docs/hosts/` say so.
 
 ### Changed
 
