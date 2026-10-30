@@ -8,8 +8,11 @@
  * file adds its own cap per settle so the loop always ends.
  *
  * Loads in Pi >= 0.87.0 (the release that added agent_before_settle) from:
- *   - npm:  pi install npm:pi-vidbyte-memory
+ *   - the vidbyte-memory Pi package: pi install git:github.com/cerredz/vidbyte-memory@v0.3.0
+ *     (or npm:vidbyte-memory), which also brings the install-memory skill
  *   - a project file: <project>/.pi/extensions/vidbyte-memory.js (needs project trust)
+ * When both load, only the copy loaded last gates: two gates would each run the guard, and after the
+ * guard gives up at round 5 the other copy would start a new cycle of 5.
  * Plain ESM JavaScript on purpose: Pi loads it through jiti, and Node can import it directly in tests.
  * No imports beyond Node built-ins. It never throws: any failure means "do not block".
  */
@@ -23,6 +26,10 @@ const MESSAGE_TYPE = "vidbyte-memory-guard";
 const GUARD_TIMEOUT_MS = 5 * 60 * 1000; // guard.py runs the project's pytest suite
 const PROBE_TIMEOUT_MS = 15 * 1000;
 const MAX_CONTINUES_PER_SETTLE = 6; // guard.py stops at 5; this is the backstop
+
+// Shared by every copy of this file in the Pi process. Pi loads extensions again on reload, /new and
+// /resume, so the newest copy is always one the live runtime loaded.
+const SHARED = (globalThis[Symbol.for("vidbyte-memory.pi-gate")] ??= { owner: null });
 
 /** The nearest folder with memory/MAP.md, searched upward from `start`; null when there is none. */
 export function findProjectRoot(start) {
@@ -145,6 +152,8 @@ function setStatus(ctx, text) {
 export default function vidbyteMemory(pi) {
 	let continuesThisSettle = 0;
 	let warnedNoPython = false;
+	const self = {};
+	SHARED.owner = self;
 
 	// agent_start fires again on every continuation, so the backstop resets only when Pi truly settles.
 	pi.on("agent_settled", () => {
@@ -156,6 +165,7 @@ export default function vidbyteMemory(pi) {
 			if (!event || event.outcome !== "completed") return undefined; // errors and aborts end the run
 			if (ctx?.mode === "json") return undefined; // JSON-mode children (subagents) are not gated
 			if (process.env.VIDBYTE_MEMORY_GUARD === "off") return undefined;
+			if (SHARED.owner !== self) return undefined; // a later-loaded copy gates this process
 			if (continuesThisSettle >= MAX_CONTINUES_PER_SETTLE) return undefined;
 
 			const cwd = typeof ctx?.cwd === "string" && ctx.cwd ? ctx.cwd : process.cwd();

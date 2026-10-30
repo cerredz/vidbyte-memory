@@ -31,7 +31,11 @@ The plugin registers a `pre_verify` hook. Before Hermes finishes a turn, it runs
 
 ## Status
 
-Tested with a fake Hermes context against the real guard (2026-10-30); not yet run in a live Hermes session. Needs Hermes 0.21.6 or later.
+Run on 2026-10-30 on Windows, with Hermes built from git (`903230b1`), against a local mock model, through Hermes's own in-process one-shot runner. On a turn that wrote a file, the plugin kept the turn going 3 times, Hermes's cap on nudges per turn.
+
+**Before 0.3.0 the plugin failed open on Windows.** Hermes's venv exports `PYTHONHOME`, and the project's Python died at startup before the guard could run.
+
+The `hermes -z` CLI path was not run, because its gateway did not start in the test setup. Template CI also tests the plugin against a fake Hermes context. Needs Hermes 0.21.6 or later.
 
 Vendor docs: https://github.com/NousResearch/hermes-agent
 

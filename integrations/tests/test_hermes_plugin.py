@@ -122,6 +122,15 @@ def test_block_becomes_continue_with_the_reason(plugin, project):
     assert Path(call["cwd"]) == project.resolve()
 
 
+def test_hermes_pythonhome_does_not_reach_the_guard(plugin, project, tmp_path, monkeypatch):
+    # Hermes's venv launcher on Windows exports PYTHONHOME; a Python started with a foreign home dies at
+    # startup, which silently let every turn end. An empty folder stands in for that foreign home.
+    _module, ctx = plugin
+    monkeypatch.setenv("PYTHONHOME", str(tmp_path / "hermes-base"))
+    message = fire_pre_verify(ctx, changed_paths=[str(project / "src" / "a.py")])
+    assert message == "G-001: tests fail. (guard round 1 of 5)"
+
+
 def test_no_memory_map_means_no_guard(plugin, tmp_path, monkeypatch):
     bare = tmp_path / "bare"
     (bare / "scripts").mkdir(parents=True)

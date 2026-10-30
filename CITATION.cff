@@ -12,7 +12,7 @@ authors:
     website: "https://vidbyte.pro"
 repository-code: "https://github.com/cerredz/vidbyte-memory"
 license: MIT
-version: 0.2.1
+version: 0.3.0
 date-released: "2026-10-30"
 keywords:
   - agent memory

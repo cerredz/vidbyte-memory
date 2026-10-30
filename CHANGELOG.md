@@ -6,6 +6,31 @@ Task repos made from the template do not update themselves. When a change matter
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-30
+
+Install from npm and as a Pi package. Requested by @cerredz.
+
+### Added
+
+- **The npm package `vidbyte-memory`** (the root `package.json`). `npx vidbyte-memory init` runs `scripts/install.py` from the package's own copy of the template, so it works offline and installs the same release as the package; `uninstall` and every installer option pass through. It looks for Python 3.9+ the way the agent plugins do (`VIDBYTE_MEMORY_PYTHON`, then `py -3`, `python`, `python3` on Windows). It works once the package is published to npm.
+- **A Pi package** in the same `package.json`: `pi install git:github.com/cerredz/vidbyte-memory@v0.3.0` loads the turn-end extension for every repo and the `install-memory` skill. The `pi-package` keyword lists it in the Pi gallery once it is on npm.
+- Template CI tests the npm command end to end (install, then uninstall, from the package's files), packs both npm packages, and fails when `package.json` stops shipping a file the installer copies.
+
+### Fixed
+
+- **Hermes on Windows never blocked a turn.** Hermes runs from its own venv, whose launcher exports `PYTHONHOME`. The project's Python inherited it, died at startup, and the plugin let every turn end. The plugin now drops `PYTHONHOME` before it starts the guard. Found in a live Hermes run.
+- **Pi ran the guard twice with both copies loaded.** With the Pi package and the project's `.pi/extensions/vidbyte-memory.js` both loaded, each copy ran the guard. After the guard gave up at round 5, the other copy started a second cycle of 5. Now only the copy loaded last gates the process. Existing task repos: copy `integrations/pi/vidbyte-memory.js` to `.pi/extensions/vidbyte-memory.js`.
+
+### Tested
+
+- **The turn-end plugins were run live on 2026-10-30** against a local mock model, in repos with a failing test and an uncommitted file. Each kept the session working until the guard's cap (Hermes: its own cap of 3 nudges per turn).
+  - OpenCode 1.19.5 and 2.2.4, Kilo 7.8.18, Pi 1.4.0, and Hermes from git through its in-process runner.
+  - Headless `opencode run` (1.x) and `kilo run` exit before the plugin's new prompt starts. The host pages in `docs/hosts/` say so.
+
+### Changed
+
+- `opencode-vidbyte-memory` ships its license file, ready for `npm publish` from `integrations/opencode`.
+
 ## [0.2.1] - 2026-10-30
 
 Listing fixes found while submitting v0.2.0 to agent marketplaces. Requested by @cerredz.
@@ -63,7 +88,8 @@ First public release. Requested by @cerredz.
 - `template-ci.yml`, which tests Python 3.9 and 3.13 on Ubuntu and 3.11 on Windows, only in this repo.
 - A live example, [cerredz/vidbyte-memory-example](https://github.com/cerredz/vidbyte-memory-example), made from the template.
 
-[Unreleased]: https://github.com/cerredz/vidbyte-memory/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/cerredz/vidbyte-memory/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/cerredz/vidbyte-memory/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/cerredz/vidbyte-memory/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/cerredz/vidbyte-memory/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/cerredz/vidbyte-memory/releases/tag/v0.1.0

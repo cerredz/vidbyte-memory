@@ -130,6 +130,23 @@ test("blocks with the guard's reason, keeps earlier drafts, gives up after the g
 	assert.equal(host.calls.length, 0, "no sendMessage/sendUserMessage: the boundary result is the channel");
 });
 
+test("two copies (the Pi package and a project file) gate once, and stop at the guard's cap", async () => {
+	// Seen live in Pi 1.4.0: when each copy gated, the second one restarted the cycle after the guard gave up.
+	const root = makeProject("twice", { pendingFeedback: true });
+	const host = fakePi();
+	extension(host.pi);
+	extension(host.pi);
+	const { ctx } = fakeCtx(root, { sessionId: "twice-session" });
+	for (let round = 1; round <= 5; round++) {
+		const result = await host.fireBoundary("agent_before_settle", { outcome: "completed" }, ctx);
+		assert.equal(result.continue, true, `round ${round} continues`);
+		assert.equal(result.entries.length, 1, "one guard message per settle");
+		assert.match(result.entries[0].content, new RegExp(`guard round ${round} of 5`));
+	}
+	const sixth = await host.fireBoundary("agent_before_settle", { outcome: "completed" }, ctx);
+	assert.equal(sixth.continue, false, "no second cycle after the guard gives up");
+});
+
 test("skips errored runs and JSON-mode children", async () => {
 	const root = makeProject("skips", { pendingFeedback: true });
 	const host = fakePi();
