@@ -64,6 +64,9 @@ def check_tests(root: Path) -> str | None:
     result = run([sys.executable, "-m", "pytest", "-q", "tests"], root)
     if result.returncode == 0:
         return None
+    if "No module named pytest" in result.stderr:
+        # The agent ran the hook with an interpreter that has no pytest: the tests never ran, so say that.
+        return f"G-001: the tests could not run because pytest is not installed for {sys.executable}. Run `{sys.executable} -m pip install pytest`, or point the hook at the project's Python."
     tail = "\n".join((result.stdout or result.stderr).strip().splitlines()[-15:])
     return f"G-001: tests fail. Fix the artifact or the entry, never the test.\n{tail}"
 

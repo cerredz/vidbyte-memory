@@ -59,6 +59,8 @@ AGENTS = {
     "copilot": {"markers": [".github/copilot-instructions.md", ".github/agents", ".github/skills", ".github/hooks"], "home": [".copilot"], "bins": ["copilot"]},
     "gemini": {"markers": [".gemini", "GEMINI.md"], "home": [".gemini"], "bins": ["gemini"]},
     "antigravity": {"markers": [".agents/hooks.json", ".agents/rules", ".agent"], "home": [".gemini/antigravity"], "bins": ["agy"]},
+    "pi": {"markers": [".pi"], "home": [".pi"], "bins": ["pi"]},
+    "hermes": {"markers": [".hermes", ".hermes.md"], "home": [".hermes"], "bins": ["hermes"]},
     "kiro": {"markers": [".kiro"], "home": [".kiro"], "bins": ["kiro", "kiro-cli"]},
     "qoder": {"markers": [".qoder"], "home": [".qoder"], "bins": ["qoder", "qodercli"]},
 }
@@ -253,6 +255,13 @@ def wire_agent(plan: Plan, name: str, source: Path) -> None:
             data["vidbyte-memory"] = {"Stop": [{"type": "command", "command": GUARD + " --format antigravity", "timeout": 180}]}
             return True
         merge_json(plan, t / ".agents" / "hooks.json", update, "add Stop hook")
+    elif name == "pi":
+        # Pi has no command hooks; this extension runs the guard on agent_before_settle (Pi 0.87.0 or later).
+        plan.copy(source / "integrations" / "pi" / "vidbyte-memory.js", t / ".pi" / "extensions" / "vidbyte-memory.js")
+        plan.notes.append("Pi: answer Trust the first time pi opens this repo; Pi loads project extensions only in trusted projects (`pi --approve` trusts it for one run)")
+    elif name == "hermes":
+        # Hermes plugins are per user, not per repo, so the owner installs the gate once for every repo.
+        plan.notes.append(f"Hermes: run `hermes plugins install {REPO}/integrations/hermes --enable` once for the turn-end gate, then `hermes skills trust` in this repo")
     elif name in ("kiro", "qoder"):
         for skill in sorted(p.parent for p in (source / "skills").glob("*/SKILL.md")):
             for src in sorted(p for p in skill.rglob("*") if p.is_file()):

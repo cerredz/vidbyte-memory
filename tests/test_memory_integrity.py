@@ -464,6 +464,13 @@ def test_guard_speaks_each_hook_protocol(fmt, decision, capsys):
     assert json.loads(capsys.readouterr().out) == {"decision": decision, "reason": "tests fail"}
 
 
+def test_guard_says_when_pytest_is_missing(monkeypatch, tmp_path):
+    # A hook run by an interpreter without pytest must not read as failing tests.
+    guard = _script_module("guard")
+    monkeypatch.setattr(guard, "run", lambda cmd, root: subprocess.CompletedProcess(cmd, 1, "", "No module named pytest"))
+    assert "pytest is not installed" in guard.check_tests(tmp_path)
+
+
 def test_guard_exit2_protocol_writes_the_reason_to_stderr(capsys):
     assert _script_module("guard").block("exit2", "tests fail") == 2
     out = capsys.readouterr()
@@ -479,7 +486,7 @@ def test_installer_scaffolds_memory_and_wires_agents(tmp_path, capsys):
     (tmp_path / "memory").mkdir()
     (tmp_path / "memory" / "hints.md").write_text("the owner's own hints\n", encoding="utf-8")
 
-    assert install.main(["--target", str(tmp_path), "--agents", "codex,copilot,gemini,antigravity"]) == 0
+    assert install.main(["--target", str(tmp_path), "--agents", "codex,copilot,gemini,antigravity,pi"]) == 0
     agents_md = (tmp_path / "AGENTS.md").read_text(encoding="utf-8")
     assert "## Memory index" in agents_md and "### Build" in agents_md and "Run `make` before committing." in agents_md
     assert "@AGENTS.md" in (tmp_path / "CLAUDE.md").read_text(encoding="utf-8")
@@ -495,10 +502,11 @@ def test_installer_scaffolds_memory_and_wires_agents(tmp_path, capsys):
     assert gemini["hooks"]["AfterAgent"][0]["hooks"][0]["command"].endswith("--format gemini")
     antigravity = json.loads((tmp_path / ".agents" / "hooks.json").read_text(encoding="utf-8"))
     assert antigravity["vidbyte-memory"]["Stop"][0]["command"].endswith("--format antigravity")
+    assert (tmp_path / ".pi" / "extensions" / "vidbyte-memory.js").read_bytes() == (h.ROOT / "integrations" / "pi" / "vidbyte-memory.js").read_bytes()
     assert json.loads((tmp_path / ".vidbyte-memory" / "install.json").read_text(encoding="utf-8"))["actions"]
 
     capsys.readouterr()
-    assert install.main(["--target", str(tmp_path), "--agents", "codex,copilot,gemini,antigravity"]) == 0
+    assert install.main(["--target", str(tmp_path), "--agents", "codex,copilot,gemini,antigravity,pi"]) == 0
     assert "wrote 0 files" in capsys.readouterr().out, "a second install must change nothing"
 
 
@@ -549,7 +557,8 @@ def test_plugin_manifests_agree():
     agent_plugins = json.loads(h.text("plugin.json"))
     gemini = json.loads(h.text("gemini-extension.json"))
     assert claude["name"] == agent_plugins["name"] == gemini["name"] == "vidbyte-memory"
-    assert claude["version"] == agent_plugins["version"] == gemini["version"]
+    hermes = re.search(r'(?m)^version: "([^"]+)"$', h.text("integrations/hermes/plugin.yaml"))
+    assert claude["version"] == agent_plugins["version"] == gemini["version"] == (hermes and hermes.group(1))
     allowed = {"$schema", "name", "version", "description", "author", "homepage", "repository", "license", "keywords", "extensions"}
     assert set(agent_plugins) <= allowed, f"Agent Plugins 1.0 allows only these top-level fields: {sorted(allowed)}"
     missing = [agent for agent in claude.get("agents", []) if not (h.ROOT / agent).is_file()]
