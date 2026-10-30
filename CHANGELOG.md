@@ -6,6 +6,10 @@ Task repos made from the template do not update themselves. When a change matter
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-10-30
+
+Listing fixes found while submitting v0.2.0 to agent marketplaces. Requested by @cerredz.
+
 ### Added
 
 - `.codex-plugin/plugin.json`, Codex's own plugin manifest, with the full listing metadata (long description, icon, screenshots, privacy and license links) and a `.codexignore`. Codex reads it before the root `plugin.json`; the HOL plugin scanner (`plugin-scanner` 3.58.0) now scores the repo 100/100 with no findings, which the awesome-codex-plugins catalog requires. Requested by @cerredz.
@@ -13,7 +17,7 @@ Task repos made from the template do not update themselves. When a change matter
 ### Changed
 
 - GitHub Actions are pinned to commit SHAs, with the version in a comment; Dependabot keeps them current.
-- The `install-memory` skill no longer pipes `curl` into Python when it runs outside the plugin: it clones the template into a temporary folder and runs `scripts/install.py` from there, so the owner can read the script first. The README one-liner for people is unchanged. Existing task repos: copy `skills/install-memory/SKILL.md` and run `python scripts/sync_skills.py`.
+- The `install-memory` skill no longer pipes `curl` into Python when it runs outside the plugin. It clones the release it shipped with (`--branch v0.2.1`) into a temporary folder and runs `scripts/install.py` from there, so the owner can read the script first and the install is the reviewed release. Marketplaces that mirror the skill (Kilo) require that pin, and a test keeps it equal to the plugin version. The README one-liner for people is unchanged. Existing task repos: copy `skills/install-memory/SKILL.md` and run `python scripts/sync_skills.py`.
 
 ## [0.2.0] - 2026-10-30
 
@@ -59,5 +63,7 @@ First public release. Requested by @cerredz.
 - `template-ci.yml`, which tests Python 3.9 and 3.13 on Ubuntu and 3.11 on Windows, only in this repo.
 - A live example, [cerredz/vidbyte-memory-example](https://github.com/cerredz/vidbyte-memory-example), made from the template.
 
-[Unreleased]: https://github.com/cerredz/vidbyte-memory/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/cerredz/vidbyte-memory/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/cerredz/vidbyte-memory/compare/v0.2.0...v0.2.1
+[0.2.0]: https://github.com/cerredz/vidbyte-memory/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/cerredz/vidbyte-memory/releases/tag/v0.1.0
