@@ -33,3 +33,11 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - run: pip install pytest
       - run: python -m pytest -q tests
+      # The agent plugins in integrations/ ship only from the template, so their tests run only here.
+      - run: python -m pytest -q integrations/tests
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: node --test integrations/pi/vidbyte-memory.test.mjs integrations/opencode/test/opencode-plugin.test.mjs
+        env:
+          VIDBYTE_MEMORY_PYTHON: python  # the interpreter setup-python installed pytest into, not `py -3`

@@ -1,0 +1,9 @@
+name: vidbyte-memory
+version: "0.2.0"
+description: "Turn-end gate for vidbyte-memory projects: before Hermes finishes a turn that edited files, runs the project's own scripts/guard.py and keeps the agent working while tests fail, feedback is pending or changes are uncommitted or unpushed."
+author: cerredz
+license: MIT
+homepage: https://github.com/cerredz/vidbyte-memory
+requires_hermes: ">=0.21.6"
+provides_hooks:
+  - pre_verify

@@ -122,10 +122,11 @@ The memory itself is files, so any agent that reads `AGENTS.md` can use it. What
 | Enforcement | Agents |
 |---|---|
 | Stop hook, wired by the installer or the plugin | Claude Code, Codex, GitHub Copilot, Gemini CLI, Antigravity, Cursor, Devin CLI and Grok Build (both read `.claude/settings.json`) |
-| Stop hook, wired by hand (see each page) | Factory Droid, Qwen Code, Goose, OpenHands, Qoder, Junie (in an extension), Hermes (`pre_verify`), Mistral Vibe |
-| Advisory: skills and `AGENTS.md` only | OpenCode, Pi, Kilo Code, Cline, Amp, Zed, Devin Desktop (Windsurf), Kiro, Warp, Crush, Augment, Jules, JetBrains AI, Amazon Q |
+| Plugin that keeps the turn going, from [`integrations/`](integrations/) | OpenCode and Kilo Code (re-prompt on idle), Pi (`agent_before_settle`), Hermes (`pre_verify`, on turns that edit files) |
+| Stop hook, wired by hand (see each page) | Factory Droid, Qwen Code, Goose, OpenHands, Qoder, Junie (in an extension), Mistral Vibe |
+| Advisory: skills and `AGENTS.md` only | Cline, Amp, Zed, Devin Desktop (Windsurf), Kiro, Warp, Crush, Augment, Jules, JetBrains AI, Amazon Q |
 
-Tested on 2026-10-29: the plugin installs and is enabled in Claude Code 2.1.312 and Codex 0.163, and passes `gemini extensions validate` (0.42) and `agy plugin validate` (1.0.8). The other rows follow each vendor's documentation and are not yet tested end to end. [docs/hosts](docs/hosts/README.md) has one page per agent.
+Tested on 2026-10-29: the plugin installs and is enabled in Claude Code 2.1.312 and Codex 0.163, and passes `gemini extensions validate` (0.42) and `agy plugin validate` (1.0.8). The OpenCode, Kilo, Pi and Hermes plugins are tested in template CI against fake hosts built from each agent's plugin API, driving the real guard. The other rows follow each vendor's documentation and are not yet tested end to end. [docs/hosts](docs/hosts/README.md) has one page per agent.
 
 Ran it in another harness? Please [tell us how it went](https://github.com/cerredz/vidbyte-memory/discussions), so its page can move from "per the docs" to "tested".
 
@@ -150,7 +151,7 @@ Its `git log` shows each correction becoming facts, tests and a verifier. In the
 
 - **It learns only from corrections.** A new repo starts empty and gets better as you correct it, not before.
 - **Verification costs time and tokens.** Each generative step runs 3 to 5 rounds of tests and verifiers.
-- **Enforcement is automatic only in Claude Code.** Elsewhere, the agent keeps the end-of-request checklist by hand.
+- **Enforcement needs a hook or a plugin.** In agents with neither (the advisory row under [Works with](#works-with)), the agent keeps the end-of-request checklist by hand.
 - **Memory grows.** Typed entries are retired or superseded through `skills/update-memory/SKILL.md`, not trimmed automatically.
 - **It commits and pushes.** Every request ends with a commit and a push to `origin`; use `--no-push` to keep commits local.
 
@@ -170,7 +171,7 @@ Those are memory services. They extract memories from conversations, then store 
 
 ### Does it work with Codex, Cursor or other agents?
 
-Yes, by design, for any agent that reads `AGENTS.md`: the protocol, skills, prompts and scripts are plain files. Only Claude Code has been verified end to end so far; see [Works with](#works-with).
+Yes, by design, for any agent that reads `AGENTS.md`: the protocol, skills, prompts and scripts are plain files. Claude Code has been verified end to end; the plugin also installs in Codex, Gemini CLI and Antigravity, and the OpenCode, Kilo, Pi and Hermes plugins are tested against fake hosts. See [Works with](#works-with).
 
 ### Will the Stop hook trap my Claude Code session?
 
@@ -186,7 +187,7 @@ Footprint commits end with that git trailer. In public repos it lets the templat
 
 ### Can I add it to an existing repo?
 
-Yes. Run `scripts/install.py` from the repo (the one-line command is under Quick start). It copies the memory in without overwriting any file, folds an existing `AGENTS.md` into the new `## Task` block (or keeps a long one as `AGENTS.previous.md`), backs up every file it edits, wires the Stop hook for each agent it finds, and lists everything it wrote in `.vidbyte-memory/install.json`. Your own tests can stay in `tests/`; only `tests/test_fb*.py` files are treated as feedback tests.
+Yes. Run `scripts/install.py` from the repo (the one-line command is under Quick start). It copies the memory in without overwriting any file, folds an existing `AGENTS.md` into the new `## Task` block (or keeps a long one as `AGENTS.previous.md`), backs up every file it edits, wires the Stop hook for each agent it finds, and lists everything it wrote in `.vidbyte-memory/install.json`. Your own tests can stay in `tests/`; only `tests/test_fb*.py` files are treated as feedback tests. To take it out again, run `python scripts/install.py uninstall`: it deletes what the install created, restores the files it changed, takes its hook out of agent settings you edited since, and keeps (and lists) memory your agent wrote unless you add `--force`.
 
 ## Layout
 
