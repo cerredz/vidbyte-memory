@@ -30,7 +30,7 @@ Pi has no Stop hook, but since 0.87.0 it fires `agent_before_settle` before a ru
 
 - Aborted and failed runs are not gated, and neither are JSON-mode child runs (subagents).
 - It looks for Python 3 as `py -3`, `python`, then `python3` on Windows, and `python3`, then `python` elsewhere; set `VIDBYTE_MEMORY_PYTHON` to choose one.
-- With both the Pi package and the project file loaded, the guard still runs once per settle: the second copy sees the first one's message and stands down.
+- With both the Pi package and the project file loaded, the guard still runs once per settle: only the copy Pi loaded last runs it, and the other stands down.
 - If you also run a bridge that executes `.claude/settings.json` Stop hooks inside Pi, the guard runs twice per settle; keep one of the two.
 
 ## Status
